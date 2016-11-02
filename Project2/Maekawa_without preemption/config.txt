@@ -1,0 +1,7 @@
+3 20 10 10
+0 localhost 5108
+1 localhost 5188
+2 localhost 6188
+0 0 1 2
+1 1 2 
+2 2 0
