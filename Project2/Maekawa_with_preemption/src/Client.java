@@ -36,10 +36,14 @@ public class Client {
 	}
 
 	public static void sendRelease() {
+		for(String key : Main.receivedGrants.keySet()){
+			Main.receivedGrants.put(key, false);
+		}
 		for (String id : Main.myNode.quorumList) {
 			Client.constructMessage(id, Message.Type.RELEASE);
 		}
-		Main.grantsReceived.clear();
+		
+//		Main.grantsReceived.clear();
 	}
 
 	/*

@@ -80,7 +80,8 @@ public class Server extends Thread {
 			Main.requestQueue.add(request);
 			Collections.sort(Main.requestQueue);
 
-			if(grantTopRequest()) break;
+			if (grantTopRequest())
+				break;
 
 			/*
 			 * If GRANT has been given to another node, - find the corresponding
@@ -90,7 +91,7 @@ public class Server extends Thread {
 			 * send FAIL
 			 */
 
-			int i = 0;
+			int i;
 			for (i = 0; i < Main.requestQueue.size(); i++) {
 				Request req = Main.requestQueue.get(i);
 				if (req.getRequestingNode().equals(Main.grantedToNode)) {
@@ -113,36 +114,63 @@ public class Server extends Thread {
 			 * section
 			 */
 			// Update the grant list, Yield
-			for (i=0;i<Main.grantsReceived.size();i++) {
+			/*for (i = 0; i < Main.grantsReceived.size(); i++) {
 				String id = Main.grantsReceived.get(i);
 				if (id.equals(message.getOriginNode())) {
 					Main.grantsReceived.remove(i);
 					break;
 				}
 			}
+			*/
+			
+			for(String key : Main.receivedGrants.keySet()){
+				if(key.equals(message.getOriginNode())){
+					Main.receivedGrants.put(key, false);
+				}
+			}
 			if (!MutualExclusion.isExectingCS()) {
 				Client.constructMessage(message.getOriginNode(), Message.Type.YIELD);
 			}
+			
 
 			// Reply YIELD
-			
+
 			break;
 
 		case GRANT:
 
+			Main.receivedGrants.put(message.getOriginNode(), true);
+			boolean allGrantsReceived = true;
+			int noOfGrantsReceived = 0;
+			for(String key : Main.receivedGrants.keySet()){
+				if(Main.receivedGrants.get(key)) noOfGrantsReceived++;
+				else allGrantsReceived = false;
+			}
+			if(allGrantsReceived && noOfGrantsReceived==Main.myNode.quorumList.size()){
+				MutualExclusion.enterCS();
+			}
+			
+/*			
+			
+			
 			// Add to grantsReceived
 			Main.grantsReceived.add(message.getOriginNode());
 			// If GRANT has been received from all quorum members, enter
 			// critical section
-			for(String id: Main.myNode.quorumList){
-				boolean found = false;
-				for(String grants:Main.grantsReceived){
-					if(id.equals(grants)) found=true; 
+			boolean found = false;
+			for (String id : Main.myNode.quorumList) {
+				found = false;
+				for (String grants : Main.grantsReceived) {
+					if (id.equals(grants)){
+						found = true;
+						break;
+					}
 				}
-				if(!found) return;
+				if (!found)
+					break;
 			}
-			MutualExclusion.enterCS();
-			
+			if(found) MutualExclusion.enterCS();*/
+
 			break;
 
 		case FAIL:
@@ -162,7 +190,7 @@ public class Server extends Thread {
 
 			// Update grantedTo node
 			if (Main.grantedToNode.equals(message.getOriginNode())) {
-				Main.grantedToNode = "";
+				Main.grantGiven = false;
 			}
 
 			grantTopRequest();
@@ -172,12 +200,12 @@ public class Server extends Thread {
 		case YIELD:
 
 			// Remove the corresponding GRANT
-			if(Main.requestQueue.size()>0 && Main.grantedToNode.equals(Main.requestQueue.get(0))){
+			if (Main.requestQueue.size() > 0 && Main.grantedToNode.equals(Main.requestQueue.get(0))) {
 				break;
 			}
-			
+
 			if (Main.grantedToNode.equals(message.getOriginNode())) {
-				Main.grantedToNode = "";
+				Main.grantGiven = false;
 			}
 			grantTopRequest();
 
@@ -186,18 +214,21 @@ public class Server extends Thread {
 			break;
 
 		}
-		//Utils.printMessageDetails(message);
+		// Utils.printMessageDetails(message);
 	}
 
 	/*
 	 * Send GRANT to request with least timestamp
 	 */
 	private boolean grantTopRequest() {
-		if (Main.requestQueue.size() > 0 && Main.grantedToNode.length() == 0) {
+		if (Main.grantGiven)
+			return false;
+		if (Main.requestQueue.size() > 0) {
 			String nodeId = Main.requestQueue.get(0).getRequestingNode();
-			if (Main.requestQueue.size() > 0 && Main.grantedToNode.length() == 0) {
-				Client.constructMessage(nodeId, Message.Type.GRANT);
+			if (Main.requestQueue.size() > 0) {
+				Main.grantGiven = true;
 				Main.grantedToNode = nodeId;
+				Client.constructMessage(nodeId, Message.Type.GRANT);
 				return true;
 			}
 		}

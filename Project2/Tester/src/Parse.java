@@ -11,7 +11,7 @@ import java.util.List;
 
 public class Parse {
 	public static void main(String args[]) {
-		String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced Operating System/Projects/Project2_AOS/out.txt";
+		String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced Operating System/Projects/Project2/Maekawa_with_preemption/out.txt";
 		FileReader fileReader;
 		String line = "";
 		Integer lineNo = 0;
@@ -23,6 +23,8 @@ public class Parse {
 				line = bufferedReader.readLine();
 				lineNo++;
 				if (line == null)
+					continue;
+				if(line.trim().length()==0)
 					continue;
 				if (line.split("\t").length < 1)
 					continue;
@@ -51,6 +53,8 @@ public class Parse {
 							if (!n.nodeId.equals(entry.node.nodeId)) {
 								System.out
 										.println("Overlap! at line " + i + "; " + entry.node.nodeId + ", " + n.nodeId);
+								System.out.println(entry.node.nodeId + " enters at " + entry.node.enterTime + ";\t"+n.nodeId + "enters at " + n.enterTime);
+								System.out.println(entry.node.nodeId + " exits at " + entry.node.exitTime);
 								return;
 							}
 						}
@@ -74,6 +78,7 @@ public class Parse {
 			e.printStackTrace();
 		} catch (Exception e) {
 			System.out.println("Error: line = " + line);
+			e.printStackTrace();
 		}
 
 	}

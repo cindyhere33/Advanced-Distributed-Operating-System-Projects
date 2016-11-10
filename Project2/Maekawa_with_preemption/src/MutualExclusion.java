@@ -5,12 +5,12 @@ public class MutualExclusion {
 
 	private static boolean lock = false;
 
-	static SimpleDateFormat sdf = new SimpleDateFormat(" HH:mm:ss.SSS");
+	static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
 
 	public static void enterCS() {
 		lock = true;
 
-		Utils.log("Enter\t" + sdf.format(new Date())+"\n");
+		Utils.log("Enter\t" + sdf.format(new Date().getTime())+"\n");
 		double time = System.currentTimeMillis() + Math.floor((-Main.csExecutionTime * Math.log(Math.random())));
 		while (System.currentTimeMillis() <= time && lock) {
 
@@ -20,7 +20,7 @@ public class MutualExclusion {
 	}
 
 	public static void exitCS() {
-		Utils.log("Exit\t" + sdf.format(new Date())+"\n");
+		Utils.log("Exit\t" + sdf.format(new Date().getTime())+"\n");
 		if (lock) {
 			Client.sendRelease();
 		} else {
