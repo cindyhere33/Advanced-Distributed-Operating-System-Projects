@@ -70,6 +70,8 @@ public class Parser {
 	static void processLine(String line){
 		if(line==null || line.trim().length()==0 || line.split("\t").length<1) return;
 		String words[] = line.split("\t");
+		if(words.length>3) return;
+		if(!(words[1].contains("Enter") || words[1].contains("Exit"))) return; 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
 		try {
 			Date date = sdf.parse(words[2].trim());

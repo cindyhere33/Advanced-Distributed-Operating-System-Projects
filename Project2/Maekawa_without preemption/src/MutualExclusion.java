@@ -2,43 +2,41 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MutualExclusion {
-	
+
 	private static boolean lock = false;
-	
-	
-	static SimpleDateFormat sdf = new SimpleDateFormat(" HH:mm:ss.SSS");
-	
-	
-	public static void enterCS(){
+
+	static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+
+	public static void enterCS() {
 		lock = true;
-		
-		Utils.log("Enter " + sdf.format(new Date()));
-		double time = System.currentTimeMillis()+Math.floor((-Main.csExecutionTime*Math.log(Math.random())));		
-		while(System.currentTimeMillis()<=time && lock){
-			
+
+		Utils.log("Enter\t" + sdf.format(new Date().getTime())+"\n");
+		double time = System.currentTimeMillis() + Math.floor((-Main.csExecutionTime * Math.log(Math.random())));
+		while (System.currentTimeMillis() <= time && lock) {
+
 		}
-		if(lock) exitCS();
+		if (lock)
+			exitCS();
 	}
 
-	
-	public static void exitCS(){
-		Utils.log("Exit " + sdf.format(new Date()));
-		if(lock){
-			Client.sendRelease();			
-		} else{
+	public static void exitCS() {
+		Utils.log("Exit\t" + sdf.format(new Date().getTime())+"\n");
+		if (lock) {
+			Client.sendRelease();
+		} else {
 			Main.noOfRequestsMade--;
 		}
 		lock = false;
 		try {
-			Thread.sleep((long)Math.floor((-Main.requestDelay*Math.log(Math.random()))));
+			Thread.sleep((long) Math.floor((-Main.requestDelay * Math.log(Math.random()))));
 			Client.requestCS();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
-	
-	public static boolean isExectingCS(){
+
+	public static boolean isExectingCS() {
 		return lock;
 	}
 }

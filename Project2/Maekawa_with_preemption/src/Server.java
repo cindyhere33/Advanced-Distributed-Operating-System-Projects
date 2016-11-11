@@ -67,7 +67,7 @@ public class Server extends Thread {
 	/*
 	 * Takes appropriate action against received message
 	 */
-	private void handleMessage(Message message) {
+	private synchronized void handleMessage(Message message) {
 		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode());
 		switch (message.getMessageType()) {
 
@@ -80,8 +80,10 @@ public class Server extends Thread {
 			Main.requestQueue.add(request);
 			Collections.sort(Main.requestQueue);
 
-			if (grantTopRequest())
+			if (!Main.grantGiven){
+				grantTopRequest();
 				break;
+			}
 
 			/*
 			 * If GRANT has been given to another node, - find the corresponding
@@ -203,10 +205,9 @@ public class Server extends Thread {
 			if (Main.requestQueue.size() > 0 && Main.grantedToNode.equals(Main.requestQueue.get(0))) {
 				break;
 			}
-
 			if (Main.grantedToNode.equals(message.getOriginNode())) {
 				Main.grantGiven = false;
-			}
+			} else break;
 			grantTopRequest();
 
 			break;
@@ -220,9 +221,7 @@ public class Server extends Thread {
 	/*
 	 * Send GRANT to request with least timestamp
 	 */
-	private boolean grantTopRequest() {
-		if (Main.grantGiven)
-			return false;
+	private synchronized boolean grantTopRequest() {
 		if (Main.requestQueue.size() > 0) {
 			String nodeId = Main.requestQueue.get(0).getRequestingNode();
 			if (Main.requestQueue.size() > 0) {

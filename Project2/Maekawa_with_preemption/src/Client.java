@@ -52,6 +52,8 @@ public class Client {
 	 */
 	public static void sendMessage(Message message) {
 		Node nextNode = Main.nodeMap.get(message.getDestinationNode());
+		if(message==null) System.out.println("Message is null");
+		else if (nextNode==null) System.out.println("Nextnode is null");
 		Utils.log(" - " + message.getMessageType() + " -> " + nextNode.getId());
 		InetSocketAddress socketAddr = new InetSocketAddress(nextNode.getHostName(), nextNode.getPortNo());
 		sendToSocket(socketAddr, message);

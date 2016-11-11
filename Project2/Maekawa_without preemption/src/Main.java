@@ -28,6 +28,10 @@ public class Main {
 	public static String grantedToNode = "";
 	
 	public static Boolean isFinalRun = true;
+	
+	public static Boolean grantGiven = false;
+	
+	public static HashMap<String, Boolean> receivedGrants = new HashMap<>();
 
 	public static void main(String[] args) throws IOException {
 		try {
