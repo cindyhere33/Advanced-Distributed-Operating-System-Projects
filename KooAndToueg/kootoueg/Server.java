@@ -15,6 +15,8 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.ShutdownNotification;
 
+import kootoueg.Main.EventType;
+
 public class Server extends Thread {
 
 	// Server socket
@@ -36,6 +38,7 @@ public class Server extends Thread {
 	 */
 	@Override
 	public void run() {
+		Utils.takeCheckpoint();
 		InetSocketAddress serverAdd = new InetSocketAddress(Main.myNode.getHostName(), Main.myNode.getPortNo());
 		try {
 			ssc = SctpServerChannel.open();
@@ -51,7 +54,6 @@ public class Server extends Thread {
 					ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytebuf.array()));
 					Message message = (Message) ois.readObject();
 					handleMessage(message);
-					Main.timestamp++;
 					ois.close();
 				}
 				sc.close();
@@ -64,11 +66,18 @@ public class Server extends Thread {
 		}
 	}
 
-
-
 	private void handleMessage(Message message) {
-		// TODO Auto-generated method stub
-		
+		switch (message.getMessageType()) {
+		case APPLICATION:
+			Utils.updateVectors(EventType.RECEIVE_MSG, message);
+			break;
+		case CHECKPOINT:
+			Utils.updateVectors(EventType.CHECKPOINT, message);
+			break;
+		case RECOVERY:
+			Utils.updateVectors(EventType.RECOVERY, message);
+			break;
+		}
 	}
 
 	/*
@@ -100,6 +109,5 @@ public class Server extends Thread {
 			return HandlerResult.RETURN;
 		}
 	}
-	
-	
+
 }

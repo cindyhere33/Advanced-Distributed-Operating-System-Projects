@@ -9,20 +9,21 @@ import java.nio.ByteBuffer;
 import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
 
-public class Client{
+import kootoueg.Main.EventType;
+import kootoueg.Message.TypeOfMessage;
 
-	public static void constructMessage(String nodeId, Message.Type type) {
-		sendMessage(new Message(Main.myNode.getId(), nodeId, type, Main.timestamp));
-		Main.timestamp++;
-	}
+public class Client {
 
-	public static void sendRelease() {
-		for(String key : Main.receivedGrants.keySet()){
-			Main.receivedGrants.put(key, false);
+	public static void constructMessage(Integer nodeId, Message.TypeOfMessage type) {
+		if (type == TypeOfMessage.APPLICATION)
+			Main.msgCount++;
+		if (Main.msgCount >= Main.totalNoOfMsgs) {
+			Utils.log("Terminated successfully");
+			Main.server.destroy();
 		}
-		for (String id : Main.myNode.quorumList) {
-			Client.constructMessage(id, Message.Type.RELEASE);
-		}
+		Message msg = new Message(Main.myNode.getId(), nodeId, Main.msgCount, type);
+		sendMessage(msg);
+		Utils.updateVectors(EventType.SEND_MSG, msg);
 	}
 
 	/*

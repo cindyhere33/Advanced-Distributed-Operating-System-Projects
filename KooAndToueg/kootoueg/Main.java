@@ -13,48 +13,50 @@ public class Main {
 	// Total number of nodes in the network connected to this node
 	public static Integer noNodes;
 
-	// The Node object of this node - contains port number and hostname
+	// The Node object of this node - contains port number and host name
 	public static Node myNode;
 
 	// Map of all nodes with their identifiers as keys
-	public static HashMap<String, Node> nodeMap = new HashMap<>();
+	public static HashMap<Integer, Node> nodeMap = new HashMap<>();
 
 	// Client object for this node
 	public static Client client;
-	
-	public static List<String> vectorClock = new ArrayList<>();	
-	
+
+	// Ordered by 1.VectorClock 2.FirstLabelSent 3.LastLabelReceived
+	// 4.LastLabelSent
+	public static Integer[][] vectors;
+
+	public static enum VectorType {
+		VECTOR_CLOCK, FIRST_LABEL_SENT, LAST_LABEL_RECEIVED, LAST_LABEL_SENT
+	}
+
+	public static enum EventType {
+		SEND_MSG, RECEIVE_MSG, CHECKPOINT, RECOVERY
+	}
+
 	public static Boolean isFinalRun = true;
-	
-	public static HashMap<String, Boolean> receivedGrants = new HashMap<>();
+
+	public static Integer checkpointSequenceNumber = 0;
+
+	public static List<Checkpoint> checkpointsTaken = new ArrayList<>();
+
+	public static Integer instanceDelay = 0, sendDelay = 0, msgCount = 0, totalNoOfMsgs = 0;
+
+	public static List<EventSequence> checkpointRecoverySequence = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
 		try {
 			ConfigParser parser = new ConfigParser(args[0]);
 			parser.parseFile();
-			setupVectors();
-			server = new Server(myNode.getHostName(), myNode.getPortNo());
-			server.start();
-			Thread.sleep(7000);
-			
-			
+
+			/*
+			 * Utils.setupVectors(); server = new Server(myNode.getHostName(),
+			 * myNode.getPortNo()); server.start(); Thread.sleep(7000);
+			 */
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	private void setupVectors(){
-		
-	}
-	
-	
-	public static int timestamp=0;
-	
-	public static boolean lock=false;
-		
-	public static List<String> grantsReceived = new ArrayList<>();
-	
-	public static List<String> failsSent = new ArrayList<>();
 
 	/*
 	 * Kills the server thread and closes server socket

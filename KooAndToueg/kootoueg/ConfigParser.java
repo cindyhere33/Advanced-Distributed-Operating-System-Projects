@@ -7,15 +7,14 @@ import java.nio.file.Paths;
 public class ConfigParser {
 
 	public ConfigParser(String myId) {
-		this.myId = myId;
+		this.myId = Integer.parseInt(myId);
 	}
 
-	String myId = "";
+	Integer myId;
 
-	String directory = "/home/010/s/sx/sxk159231/CS6378/Project3/KooAndToueg/config.txt";
-	// String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced
-	// Operating System/Projects/Project2_AOS/config.txt";
-	Boolean nodeAddressesSet = false;
+	// String directory =
+	// "/home/010/s/sx/sxk159231/CS6378/Project3/KooAndToueg/config.txt";
+	String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced Operating System/Projects/KooAndToueg/config.txt";
 
 	/*
 	 * Data from config provided by launcher through command line arguments are
@@ -26,6 +25,7 @@ public class ConfigParser {
 		int noNodesSet = 0;
 		Main.noNodes = -1;
 		Main.myNode = null;
+		boolean neighboursSet = false;
 		try {
 			for (String line : Files.readAllLines(Paths.get(directory))) {
 				if (line.startsWith("#"))
@@ -42,33 +42,44 @@ public class ConfigParser {
 				String[] parts = line.split(" ");
 				if (parts.length == 1 && parts[0].equals(""))
 					continue;
-				if (Main.noNodes < 0 && parts.length == 4) {
+				if (Main.noNodes < 0 && parts.length == 5) {
 					Main.noNodes = Integer.parseInt(parts[0].trim());
-					Main.requestDelay = Integer.parseInt(parts[1].trim());
-					Main.csExecutionTime = Integer.parseInt(parts[2].trim());
-					Main.totalNoOfRequests = Integer.parseInt(parts[3].trim());
+					Main.instanceDelay = Integer.parseInt(parts[2].trim());
+					Main.sendDelay = Integer.parseInt(parts[3].trim());
+					Main.totalNoOfMsgs = Integer.parseInt(parts[4].trim());
 					continue;
 				}
 				if (noNodesSet < Main.noNodes) {
 					if (parts.length == 3) {
-						Node node = new Node(parts[0].trim(), parts[1].trim(), parts[2].trim());
+						Node node = new Node(Integer.parseInt(parts[0].trim()), parts[1].trim(), parts[2].trim());
 						Main.nodeMap.put(node.getId(), node);
 						noNodesSet++;
 						continue;
 					}
 				}
-				if (noNodesSet == Main.noNodes && Main.myNode == null)
+				if (noNodesSet == Main.noNodes.intValue() && Main.myNode == null)
 					Main.myNode = Main.nodeMap.get(this.myId);
-				if (parts.length > 0 && parts[0].trim().startsWith(myId)) {
-					int quorumSize = parts.length;
-					for (int k = 1; k < quorumSize; k++) {
-						Main.myNode.quorumList.add(parts[k].trim());
+
+				if (!neighboursSet) {
+					if (parts.length > 0 && Integer.parseInt(parts[0].trim()) == myId.intValue()) {
+						int noOfNeighbours = parts.length;
+						for (int k = 1; k < noOfNeighbours; k++) {
+							Main.myNode.neighbours.add(Integer.parseInt(parts[k].trim()));
+						}
+						neighboursSet = true;
 					}
-				} else
-					continue;
+				} else {
+					if (parts.length == 5) {
+						Main.checkpointRecoverySequence
+								.add(new EventSequence(parts[1].trim(), Integer.parseInt(parts[3].trim())));
+					}
+				}
+
 			}
 			// printAll();
-		} catch (IOException e) {
+		} catch (
+
+		IOException e) {
 			System.out.println("Config - File exception");
 			e.printStackTrace();
 		}
@@ -77,14 +88,19 @@ public class ConfigParser {
 	void printAll() {
 		System.out.println("MyNode : \t" + Main.myNode.id + " \t " + Main.myNode.hostName + "\t" + Main.myNode.portNo);
 		System.out.println("All Node Details : \n");
-		for (String id : Main.nodeMap.keySet()) {
+		for (Integer id : Main.nodeMap.keySet()) {
 			Node node = Main.nodeMap.get(id);
 			System.out.println("\t" + node.id + " \t " + node.hostName + "\t" + node.portNo + "\n");
 		}
-		System.out.println("Quorum : ");
-		for (String id : Main.myNode.quorumList) {
+		System.out.println("Neighbours : ");
+		for (Integer id : Main.myNode.neighbours) {
 			System.out.println(id + "\t");
 		}
+		for (EventSequence seq : Main.checkpointRecoverySequence) {
+			System.out.println("Action : " + seq.type.name() + " by Process : " + seq.nodeId);
+		}
+		System.out.println("InstanceDelay : " + Main.instanceDelay + " \nSend delay : " + Main.sendDelay
+				+ "\n Total msg count = " + Main.totalNoOfMsgs);
 		System.out.println();
 
 	}

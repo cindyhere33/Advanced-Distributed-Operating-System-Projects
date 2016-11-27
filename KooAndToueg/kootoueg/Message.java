@@ -1,53 +1,53 @@
 package kootoueg;
+
 import java.io.Serializable;
 
 public class Message implements Serializable {
 
-	public enum Type {
-		REQUEST, RELEASE, GRANT
-	}
-
 	private static final long serialVersionUID = 2L;
 
 	// The node that generated this message
-	private String originNode;
-
-	// Type of message
-	private Type messageType;
+	private Integer originNode;
 
 	// Destination of the message
-	private String destinationNode;
+	private Integer destinationNode;
 
-	private Integer timestamp;
+	private Integer label;
 
-	public Message(String sender, String receiver, Type messageType, Integer timestamp) {
+	public enum TypeOfMessage {
+		APPLICATION, CHECKPOINT, RECOVERY
+	}
+
+	private TypeOfMessage messageType;
+
+	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType) {
 		this.originNode = sender;
 		this.messageType = messageType;
 		this.destinationNode = receiver;
-		this.timestamp = timestamp;
+		this.label = label;
 	}
 
-	public Integer getTimestamp() {
-		return timestamp;
+	public Integer getLabel() {
+		return label;
 	}
 
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
 
-	public Type getMessageType() {
+	public TypeOfMessage getMessageType() {
 		return messageType;
 	}
 
-	public String getDestinationNode() {
+	public Integer getDestinationNode() {
 		return destinationNode;
 	}
 
-	public String getOriginNode() {
+	public Integer getOriginNode() {
 		return originNode;
 	}
 
-	public void setOriginNode(String originNode) {
+	public void setOriginNode(Integer originNode) {
 		this.originNode = originNode;
 	}
 
