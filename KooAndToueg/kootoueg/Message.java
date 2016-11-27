@@ -15,16 +15,19 @@ public class Message implements Serializable {
 	private Integer label;
 
 	public enum TypeOfMessage {
-		APPLICATION, CHECKPOINT, RECOVERY
+		APPLICATION, CHECKPOINT_INITIATION, CHECKPOINT_OK, CHECKPOINT_FINAL, RECOVERY
 	}
 
 	private TypeOfMessage messageType;
 
-	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType) {
+	private Integer initiator;
+
+	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType, Integer initiator) {
 		this.originNode = sender;
 		this.messageType = messageType;
 		this.destinationNode = receiver;
 		this.label = label;
+		this.initiator = initiator;
 	}
 
 	public Integer getLabel() {
@@ -49,6 +52,14 @@ public class Message implements Serializable {
 
 	public void setOriginNode(Integer originNode) {
 		this.originNode = originNode;
+	}
+
+	public Integer getInitiator() {
+		return initiator;
+	}
+
+	public void setInitiator(Integer initiator) {
+		this.initiator = initiator;
 	}
 
 }

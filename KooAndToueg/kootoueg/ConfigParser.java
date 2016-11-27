@@ -99,8 +99,8 @@ public class ConfigParser {
 		for (EventSequence seq : Main.checkpointRecoverySequence) {
 			System.out.println("Action : " + seq.type.name() + " by Process : " + seq.nodeId);
 		}
-		System.out.println("InstanceDelay : " + Main.instanceDelay + " \nSend delay : " + Main.sendDelay
-				+ "\n Total msg count = " + Main.totalNoOfMsgs);
+		System.out.println("\nInstanceDelay : " + Main.instanceDelay + " \nSend delay : " + Main.sendDelay
+				+ "\nTotal msg count = " + Main.totalNoOfMsgs);
 		System.out.println();
 
 	}

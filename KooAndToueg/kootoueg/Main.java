@@ -44,15 +44,22 @@ public class Main {
 
 	public static List<EventSequence> checkpointRecoverySequence = new ArrayList<>();
 
+	public static boolean checkpointingInProgress = false;
+
+	public static Checkpoint temporaryCheckpoint = null;
+
+	public static HashMap<Integer, Boolean> checkpointConfirmationsReceived = new HashMap<>();
+
 	public static void main(String[] args) throws IOException {
 		try {
 			ConfigParser parser = new ConfigParser(args[0]);
 			parser.parseFile();
-
-			/*
-			 * Utils.setupVectors(); server = new Server(myNode.getHostName(),
-			 * myNode.getPortNo()); server.start(); Thread.sleep(7000);
-			 */
+			Utils.setupVectors();
+			server = new Server(myNode.getHostName(), myNode.getPortNo());
+			server.start();
+			Utils.makeCheckpointPermanent();
+			Client.sendMessage();
+			Utils.initiateCheckpointingIfMyTurn();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

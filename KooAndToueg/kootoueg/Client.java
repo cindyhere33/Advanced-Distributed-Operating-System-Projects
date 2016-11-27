@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
@@ -14,17 +17,24 @@ import kootoueg.Message.TypeOfMessage;
 
 public class Client {
 
-	public static void constructMessage(Integer nodeId, Message.TypeOfMessage type) {
-		if (type == TypeOfMessage.APPLICATION)
-			Main.msgCount++;
-		if (Main.msgCount >= Main.totalNoOfMsgs) {
-			Utils.log("Terminated successfully");
-			Main.server.destroy();
-		}
-		Message msg = new Message(Main.myNode.getId(), nodeId, Main.msgCount, type);
-		sendMessage(msg);
-		Utils.updateVectors(EventType.SEND_MSG, msg);
+	public static void sendMessage() {
+		new Timer().schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (!Main.checkpointingInProgress) {
+					if (Main.msgCount >= Main.totalNoOfMsgs) {
+						return;
+					}
+					Main.msgCount++;
+					Message msg = new Message(Main.myNode.getId(), new Random().nextInt(Main.myNode.neighbours.size()),
+							Main.msgCount, TypeOfMessage.APPLICATION, Main.myNode.getId());
+					sendMessage(msg);
+					Utils.updateVectors(EventType.SEND_MSG, msg);
+				}
+			}
+		}, 1000, Utils.getExponentialDistributedValue(Main.sendDelay));
 	}
+
 
 	/*
 	 * Sends token to the next node in the token's path. Also writes to the

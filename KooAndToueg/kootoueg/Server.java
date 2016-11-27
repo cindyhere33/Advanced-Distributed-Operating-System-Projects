@@ -16,6 +16,8 @@ import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.ShutdownNotification;
 
 import kootoueg.Main.EventType;
+import kootoueg.Main.VectorType;
+import kootoueg.Message.TypeOfMessage;
 
 public class Server extends Thread {
 
@@ -38,7 +40,6 @@ public class Server extends Thread {
 	 */
 	@Override
 	public void run() {
-		Utils.takeCheckpoint();
 		InetSocketAddress serverAdd = new InetSocketAddress(Main.myNode.getHostName(), Main.myNode.getPortNo());
 		try {
 			ssc = SctpServerChannel.open();
@@ -71,11 +72,34 @@ public class Server extends Thread {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
 			break;
-		case CHECKPOINT:
-			Utils.updateVectors(EventType.CHECKPOINT, message);
+		case CHECKPOINT_INITIATION:
+			Main.checkpointingInProgress = true;
+			Utils.updateVectors(EventType.CHECKPOINT, null);
+			if (Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][message.getOriginNode()] > -1
+					&& Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][message.getOriginNode()] < message.getLabel()
+					&& Main.temporaryCheckpoint == null) {
+				Main.temporaryCheckpoint = new Checkpoint(Main.checkpointSequenceNumber + 1, Main.vectors, false);
+			}
+			Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.CHECKPOINT_OK,
+					message.getOriginNode());
+			Client.sendMessage(msg);
 			break;
 		case RECOVERY:
 			Utils.updateVectors(EventType.RECOVERY, message);
+			break;
+		case CHECKPOINT_OK:
+			Main.checkpointConfirmationsReceived.put(message.getOriginNode(), true);
+			if (Main.checkpointConfirmationsReceived.size() == Main.myNode.neighbours.size()) {
+				Utils.makeCheckpointPermanent();
+				for (Integer id : Main.myNode.neighbours) {
+					Client.sendMessage(new Message(Main.myNode.getId(), id, 0, TypeOfMessage.CHECKPOINT_FINAL,
+							Main.myNode.getId()));
+				}
+			}
+			break;
+		case CHECKPOINT_FINAL:
+			Utils.makeCheckpointPermanent();
+			Utils.initiateCheckpointingIfMyTurn();
 			break;
 		}
 	}
