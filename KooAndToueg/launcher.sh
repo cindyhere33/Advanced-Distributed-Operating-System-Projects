@@ -6,7 +6,7 @@ netid=sxk159231
 
 
 # Root directory of your project
-PROJDIR=$HOME/CS6378/Project3/KooAndToueg/
+PROJDIR= "/media/sindhura/AAECADD7ECAD9DD7/Users/Sindhura/My Documents/Subjects/Advanced Operating System/Projects/KooAndToueg"
 
 CONFIG=$PROJDIR/config.txt
 
