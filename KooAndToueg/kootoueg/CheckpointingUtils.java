@@ -7,6 +7,7 @@ import kootoueg.Message.TypeOfMessage;
 
 public class CheckpointingUtils {
 	
+	//TODO: Temporary checkpoint null on initiation!
 	public static void makeCheckpointPermanent() {
 		if (Main.temporaryCheckpoint != null) {
 			Main.checkpointsTaken.add(Main.temporaryCheckpoint);

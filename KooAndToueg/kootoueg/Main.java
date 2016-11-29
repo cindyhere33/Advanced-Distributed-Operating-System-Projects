@@ -26,6 +26,13 @@ public class Main {
 	// 4.LastLabelSent
 	public static Integer[][] vectors;
 
+	
+	/*
+	 * Main.vectors[0] = VECTOR_CLOCK
+	 * Main.vectors[1] = FIRST_LABEL_SENT
+	 * Main.vectors[2] = LAST_LABEL_RECEIVED
+	 * Main.vectors[3] = LAST_LABEL_SENT
+	*/
 	public static enum VectorType {
 		VECTOR_CLOCK, FIRST_LABEL_SENT, LAST_LABEL_RECEIVED, LAST_LABEL_SENT
 	}
@@ -42,6 +49,7 @@ public class Main {
 
 	public static Integer instanceDelay = 0, sendDelay = 0, msgCount = 0, totalNoOfMsgs = 0;
 
+	//Sequence given in the Config file
 	public static List<EventSequence> checkpointRecoverySequence = new ArrayList<>();
 
 	public static boolean checkpointingInProgress = false;
