@@ -11,6 +11,7 @@ public class CheckpointingUtils {
 	public static void makeCheckpointPermanent() {
 		if (Main.temporaryCheckpoint != null) {
 			Main.checkpointsTaken.add(Main.temporaryCheckpoint);
+			Utils.logVectorClock();
 		}
 		announceCheckpointProtocolTermination();
 		Main.checkpointingInProgress = false;
@@ -50,7 +51,6 @@ public class CheckpointingUtils {
 		boolean shouldTakeCheckpoint = false;
 		for (Integer id : Main.myNode.neighbours) {
 			if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id.intValue()] > -1) {
-				Utils.log("Send checkpoint initiation to : " + id);
 				Message msg = new Message(Main.myNode.getId(), id,
 						Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id], TypeOfMessage.CHECKPOINT_INITIATION,
 						Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
@@ -70,7 +70,9 @@ public class CheckpointingUtils {
 	public static void takeCheckpoint() {
 		if (Main.temporaryCheckpoint == null)
 			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointsTaken.size(), Main.vectors);
+//		Utils.logVectors();
 		Utils.updateVectors(EventType.CHECKPOINT, null);
+
 	}
 
 	public static boolean needsToTakeCheckpoint(Integer sender, Integer lastLabelReceived) {
@@ -80,20 +82,19 @@ public class CheckpointingUtils {
 
 	public static void announceCheckpointProtocolTermination() {
 		for (Integer id : Main.myNode.getNeighbours()) {
-			Message msg = new Message(Main.myNode.getId(), id, Main.checkpointRecoverySequence.size(), TypeOfMessage.CHECKPOINT_FINAL, Main.myNode.getId(),
-					null);
+			Message msg = new Message(Main.myNode.getId(), id, Main.checkpointRecoverySequence.size(),
+					TypeOfMessage.CHECKPOINT_FINAL, Main.myNode.getId(), null);
 			Client.sendMessage(msg);
 		}
 		Main.checkpointingInProgress = false;
 	}
 
 	public static void initiateCheckpointProtocol() {
-		Utils.logVectors();
+		//Utils.logVectors();
 		if (hasSentCheckpointingRequests()) {
 			Main.checkpointingInProgress = true;
-			Utils.log("Set checkpointingInProgress to true");
 		} else {
-			if (Main.checkpointRecoverySequence.size() > 0){
+			if (Main.checkpointRecoverySequence.size() > 0) {
 				Main.checkpointRecoverySequence.remove(0);
 			}
 			announceCheckpointProtocolTermination();

@@ -27,7 +27,8 @@ public class Client {
 						return;
 					}
 					Main.msgCount++;
-					Message msg = new Message(Main.myNode.getId(), Main.myNode.neighbours.get(new Random().nextInt(Main.myNode.neighbours.size())),
+					Message msg = new Message(Main.myNode.getId(),
+							Main.myNode.neighbours.get(new Random().nextInt(Main.myNode.neighbours.size())),
 							Main.msgCount, TypeOfMessage.APPLICATION, Main.myNode.getId(),
 							Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 					sendMessage(msg);
@@ -43,7 +44,7 @@ public class Client {
 	 */
 	public static void sendMessage(Message message) {
 		Node nextNode = Main.nodeMap.get(message.getDestinationNode());
-		Utils.log("Sent " + message.getMessageType() + " to -> " + nextNode.getId() + "\n");
+//		Utils.log("Sent " + message.getMessageType() + " to -> " + nextNode.getId() + "\n");
 		InetSocketAddress socketAddr = new InetSocketAddress(nextNode.getHostName(), nextNode.getPortNo());
 		sendToSocket(socketAddr, message);
 	}

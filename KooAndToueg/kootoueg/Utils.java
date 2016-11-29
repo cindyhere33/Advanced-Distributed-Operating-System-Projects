@@ -43,7 +43,7 @@ public class Utils {
 	}
 
 	public static long getExponentialDistributedValue(int value) {
-		//return (long) Math.floor((-value * Math.log(Math.random())));
+		// return (long) Math.floor((-value * Math.log(Math.random())));
 		return value;
 	}
 
@@ -68,8 +68,7 @@ public class Utils {
 
 		// First label sent updated if no messages were sent to the node after
 		// taking previous checkpoint
-		
-		
+
 		case SEND_MSG:
 			Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][Main.myNode.getId()]++;
 			if (Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][msg.getDestinationNode()] == 0) {
@@ -101,13 +100,23 @@ public class Utils {
 		StringBuffer line = new StringBuffer();
 		int i = 0;
 		for (Integer[] vector : Main.vectors) {
-			line.append(VectorType.values()[i].name() + "\n");
+			line.append(VectorType.values()[i].name() + "\n------------------------------\n");
 			for (Integer vec : vector) {
 				line.append(vec + "\t");
 			}
 			line.append("\n");
 			i++;
 		}
+		Utils.log(line.toString() + "\n==================================================\n");
+	}
+
+	public static void logVectorClock() {
+		StringBuffer line = new StringBuffer();
+		line.append("Vector Clock: \n------------------------------\n");
+		for (Integer vec : Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]) {
+			line.append(vec + "\t");
+		}
+		line.append("\n");
 		Utils.log(line.toString());
 	}
 }

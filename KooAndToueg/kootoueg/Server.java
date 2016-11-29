@@ -68,8 +68,8 @@ public class Server extends Thread {
 	}
 
 	private synchronized void handleMessage(Message message) {
-		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-				+ message.getLabel());
+//		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+//				+ message.getLabel());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
@@ -87,7 +87,6 @@ public class Server extends Thread {
 				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
 						TypeOfMessage.CHECKPOINT_NOT_NEEDED, message.getOriginNode(), null);
 				Client.sendMessage(msg);
-				Utils.log("Sending checkpoint not needed to initiator : " + message.getOriginNode());
 			}
 			break;
 		case RECOVERY:
@@ -102,7 +101,7 @@ public class Server extends Thread {
 			}
 
 			if (allConfirmationsReceived) {
-				if (Main.checkpointRecoverySequence.size() > 0){
+				if (Main.checkpointRecoverySequence.size() > 0) {
 					Main.checkpointRecoverySequence.remove(0);
 				}
 				CheckpointingUtils.makeCheckpointPermanent();
@@ -120,7 +119,6 @@ public class Server extends Thread {
 		case CHECKPOINT_NOT_NEEDED:
 			if (Main.checkpointConfirmationsReceived.containsKey(message.getOriginNode())) {
 				Main.checkpointConfirmationsReceived.remove(message.getOriginNode());
-				Utils.log("Not awaiting checkpointing feedback from " + message.getOriginNode());
 			}
 			break;
 		}
