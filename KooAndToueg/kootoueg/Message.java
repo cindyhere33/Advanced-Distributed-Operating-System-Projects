@@ -21,13 +21,16 @@ public class Message implements Serializable {
 	private TypeOfMessage messageType;
 
 	private Integer initiator;
+	
+	private Integer[] vectorClock;
 
-	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType, Integer initiator) {
+	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType, Integer initiator, Integer[] vectorClock) {
 		this.originNode = sender;
 		this.messageType = messageType;
 		this.destinationNode = receiver;
 		this.label = label;
 		this.initiator = initiator;
+		this.vectorClock = vectorClock;
 	}
 
 	public Integer getLabel() {
@@ -40,6 +43,10 @@ public class Message implements Serializable {
 
 	public TypeOfMessage getMessageType() {
 		return messageType;
+	}
+
+	public Integer[] getVectorClock() {
+		return vectorClock;
 	}
 
 	public Integer getDestinationNode() {

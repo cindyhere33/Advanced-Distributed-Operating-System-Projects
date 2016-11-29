@@ -1,13 +1,10 @@
 package kootoueg;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-
-import javax.swing.Timer;
+import java.util.Timer;
 
 import kootoueg.Main.VectorType;
 import kootoueg.Message.TypeOfMessage;
@@ -57,6 +54,7 @@ public class Utils {
 		}
 		Main.checkpointingInProgress = false;
 		Main.temporaryCheckpoint = null;
+		logVectors();
 	}
 
 	public static void initVector(Main.VectorType type, int val) {
@@ -64,7 +62,7 @@ public class Utils {
 	}
 
 	public static void setupVectors() {
-		Main.vectors = new Integer[4][Main.myNode.neighbours.size()];
+		Main.vectors = new Integer[4][Main.noNodes];
 		Utils.initVector(VectorType.VECTOR_CLOCK, 0);
 		Utils.initVector(VectorType.FIRST_LABEL_SENT, -1);
 		Utils.initVector(VectorType.LAST_LABEL_RECEIVED, -1);
@@ -85,7 +83,12 @@ public class Utils {
 			Main.vectors[VectorType.LAST_LABEL_SENT.ordinal()][msg.getDestinationNode()] = msg.getLabel();
 			break;
 		case RECEIVE_MSG:
-			Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][msg.getDestinationNode()]++;
+			for (int i = 0; i < Main.noNodes; i++) {
+				if (msg.getVectorClock()[i] > Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][i]) {
+					Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][i] = msg.getVectorClock()[i];
+				}
+			}
+			Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][Main.myNode.getId()]++;
 			Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][msg.getDestinationNode()] = msg.getLabel();
 			break;
 		case CHECKPOINT:
@@ -99,26 +102,61 @@ public class Utils {
 		}
 	}
 
+	/*TODO:
+	 * 1. Checkpoint request is sent only to processes that need to take a checkpoint. So the number of CHECKPOINT_OK will not be q
+	 * equal to number of neighbours
+	 * 2.If you need not take a checkpoint, send checkpoint_final to all other processes so that they know they are up next 
+	*/
 	public static void initiateCheckpointingIfMyTurn() {
 		if (Main.checkpointRecoverySequence.size() > 0
 				&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
-			Timer timer = new Timer((int) Utils.getExponentialDistributedValue(Main.instanceDelay),
-					new ActionListener() {
-						@Override
-						public void actionPerformed(ActionEvent arg0) {
-							Main.checkpointingInProgress = true;
-							for (Integer id : Main.myNode.neighbours) {
-								if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id] > -1) {
-									Message msg = new Message(Main.myNode.getId(), id,
-											Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id],
-											TypeOfMessage.CHECKPOINT_INITIATION, Main.myNode.getId());
-									Client.sendMessage(msg);
-								}
+			Utils.log("My Checkpointing turn: ");
+			Timer timer = new Timer();
+			timer.schedule(new java.util.TimerTask() {
+				@Override
+				public void run() {
+					Main.checkpointingInProgress = true;
+					Utils.log("Sending checkpoint initiation to all neighbours" );
+					boolean sentCheckpointRequest = false;
+					for (Integer id : Main.myNode.neighbours) {
+						if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id.intValue()] > -1) {
+							Utils.log("Send checkpoint initiation to : " + id);
+							Message msg = new Message(Main.myNode.getId(), id,
+									Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id],
+									TypeOfMessage.CHECKPOINT_INITIATION, Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+							Client.sendMessage(msg);
+							sentCheckpointRequest = true;
+						}
+					}
+					if(!sentCheckpointRequest){
+						for (Integer id : Main.myNode.neighbours) {
+							if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id.intValue()] > -1) {
+								Utils.log("Send checkpoint initiation to : " + id);
+								Message msg = new Message(Main.myNode.getId(), id,
+										Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id],
+										TypeOfMessage.CHECKPOINT_INITIATION, Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+								Client.sendMessage(msg);
+								sentCheckpointRequest = true;
 							}
 						}
-					});
-			timer.setRepeats(false); // Only execute once
-			timer.start();
+					}
+				}
+			}, Main.instanceDelay);
+			
 		}
+	}
+
+	private static void logVectors() {
+		StringBuffer line = new StringBuffer();
+		int i = 0;
+		for (Integer[] vector : Main.vectors) {
+			line.append(VectorType.values()[i].name() + "\n");
+			for (Integer vec : vector) {
+				line.append(vec + "\t");
+			}
+			line.append("\n");
+			i++;
+		}
+		Utils.log(line.toString());
 	}
 }

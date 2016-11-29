@@ -34,7 +34,7 @@ public class Main {
 		SEND_MSG, RECEIVE_MSG, CHECKPOINT, RECOVERY
 	}
 
-	public static Boolean isFinalRun = true;
+	public static Boolean isFinalRun = false;
 
 	public static Integer checkpointSequenceNumber = 0;
 

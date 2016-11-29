@@ -81,7 +81,7 @@ public class Server extends Thread {
 				Main.temporaryCheckpoint = new Checkpoint(Main.checkpointSequenceNumber + 1, Main.vectors, false);
 			}
 			Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.CHECKPOINT_OK,
-					message.getOriginNode());
+					message.getOriginNode(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 			Client.sendMessage(msg);
 			break;
 		case RECOVERY:
@@ -93,7 +93,7 @@ public class Server extends Thread {
 				Utils.makeCheckpointPermanent();
 				for (Integer id : Main.myNode.neighbours) {
 					Client.sendMessage(new Message(Main.myNode.getId(), id, 0, TypeOfMessage.CHECKPOINT_FINAL,
-							Main.myNode.getId()));
+							Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]));
 				}
 			}
 			break;

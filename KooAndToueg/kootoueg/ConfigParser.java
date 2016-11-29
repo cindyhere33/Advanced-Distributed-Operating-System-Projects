@@ -12,9 +12,9 @@ public class ConfigParser {
 
 	Integer myId;
 
-	// String directory =
-	// "/home/010/s/sx/sxk159231/CS6378/Project3/KooAndToueg/config.txt";
-	String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced Operating System/Projects/KooAndToueg/config.txt";
+	String directory = "/home/010/s/sx/sxk159231/CS6378/Project3/KooAndToueg/config.txt";
+	// String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced
+	// Operating System/Projects/KooAndToueg/config.txt";
 
 	/*
 	 * Data from config provided by launcher through command line arguments are

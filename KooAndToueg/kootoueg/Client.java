@@ -13,6 +13,7 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
 
 import kootoueg.Main.EventType;
+import kootoueg.Main.VectorType;
 import kootoueg.Message.TypeOfMessage;
 
 public class Client {
@@ -27,14 +28,14 @@ public class Client {
 					}
 					Main.msgCount++;
 					Message msg = new Message(Main.myNode.getId(), new Random().nextInt(Main.myNode.neighbours.size()),
-							Main.msgCount, TypeOfMessage.APPLICATION, Main.myNode.getId());
+							Main.msgCount, TypeOfMessage.APPLICATION, Main.myNode.getId(),
+							Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 					sendMessage(msg);
 					Utils.updateVectors(EventType.SEND_MSG, msg);
 				}
 			}
-		}, 1000, Utils.getExponentialDistributedValue(Main.sendDelay));
+		}, 1000, Main.sendDelay);
 	}
-
 
 	/*
 	 * Sends token to the next node in the token's path. Also writes to the

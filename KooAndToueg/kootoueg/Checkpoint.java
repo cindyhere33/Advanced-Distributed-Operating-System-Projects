@@ -25,6 +25,5 @@ public class Checkpoint {
 	public int getSequenceNumber() {
 		return sequenceNumber;
 	}
-
 	
 }
