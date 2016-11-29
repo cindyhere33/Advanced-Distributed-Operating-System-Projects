@@ -1,6 +1,7 @@
 package kootoueg;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -13,8 +14,7 @@ public class ConfigParser {
 	Integer myId;
 
 	String directory = "/home/010/s/sx/sxk159231/CS6378/Project3/KooAndToueg/config.txt";
-	// String directory = "C:/Users/Sindhura/Documents/Subjects/Advanced
-	// Operating System/Projects/KooAndToueg/config.txt";
+	 //String directory = "/media/sindhura/AAECADD7ECAD9DD7/Users/Sindhura/My Documents/Subjects/Advanced Operating System/Projects/KooAndToueg/config.txt";
 
 	/*
 	 * Data from config provided by launcher through command line arguments are
@@ -27,7 +27,7 @@ public class ConfigParser {
 		Main.myNode = null;
 		boolean neighboursSet = false;
 		try {
-			for (String line : Files.readAllLines(Paths.get(directory))) {
+			for (String line : Files.readAllLines(Paths.get(directory), Charset.defaultCharset())) {
 				if (line.startsWith("#"))
 					continue;
 				int x = line.indexOf('#');

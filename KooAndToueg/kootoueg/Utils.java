@@ -43,10 +43,10 @@ public class Utils {
 	}
 
 	public static long getExponentialDistributedValue(int value) {
-		return (long) Math.floor((-value * Math.log(Math.random())));
+		//return (long) Math.floor((-value * Math.log(Math.random())));
+		return value;
 	}
 
-	
 	public static void initVector(Main.VectorType type, int val) {
 		Arrays.fill(Main.vectors[type.ordinal()], val);
 	}
@@ -65,6 +65,11 @@ public class Utils {
 	 */
 	public static void updateVectors(Main.EventType eventType, Message msg) {
 		switch (eventType) {
+
+		// First label sent updated if no messages were sent to the node after
+		// taking previous checkpoint
+		
+		
 		case SEND_MSG:
 			Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][Main.myNode.getId()]++;
 			if (Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][msg.getDestinationNode()] == 0) {
@@ -91,7 +96,6 @@ public class Utils {
 			break;
 		}
 	}
-
 
 	public static void logVectors() {
 		StringBuffer line = new StringBuffer();
