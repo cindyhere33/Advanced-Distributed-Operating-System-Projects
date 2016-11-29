@@ -90,7 +90,7 @@ public class Server extends Thread {
 		case CHECKPOINT_OK:
 			Main.checkpointConfirmationsReceived.put(message.getOriginNode(), true);
 			if (Main.checkpointConfirmationsReceived.size() == Main.myNode.neighbours.size()) {
-				Utils.makeCheckpointPermanent();
+				CheckpointingUtils.makeCheckpointPermanent();
 				for (Integer id : Main.myNode.neighbours) {
 					Client.sendMessage(new Message(Main.myNode.getId(), id, 0, TypeOfMessage.CHECKPOINT_FINAL,
 							Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]));
@@ -98,8 +98,8 @@ public class Server extends Thread {
 			}
 			break;
 		case CHECKPOINT_FINAL:
-			Utils.makeCheckpointPermanent();
-			Utils.initiateCheckpointingIfMyTurn();
+			CheckpointingUtils.makeCheckpointPermanent();
+			CheckpointingUtils.initiateCheckpointingIfMyTurn();
 			break;
 		}
 	}

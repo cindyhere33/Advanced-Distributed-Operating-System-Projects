@@ -57,9 +57,9 @@ public class Main {
 			Utils.setupVectors();
 			server = new Server(myNode.getHostName(), myNode.getPortNo());
 			server.start();
-			Utils.makeCheckpointPermanent();
+			CheckpointingUtils.makeCheckpointPermanent();
 			Client.sendMessage();
-			Utils.initiateCheckpointingIfMyTurn();
+			CheckpointingUtils.initiateCheckpointingIfMyTurn();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
