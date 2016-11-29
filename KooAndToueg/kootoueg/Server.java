@@ -95,6 +95,7 @@ public class Server extends Thread {
 					Client.sendMessage(new Message(Main.myNode.getId(), id, 0, TypeOfMessage.CHECKPOINT_FINAL,
 							Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]));
 				}
+				CheckpointingUtils.initiateCheckpointingIfMyTurn();
 			}
 			break;
 		case CHECKPOINT_FINAL:

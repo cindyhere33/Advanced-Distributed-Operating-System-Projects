@@ -1,9 +1,9 @@
 5 10 100 10 2000
-0 dc02 1234
-1 dc03 1233
-2 dc04 1233
-3 dc05 1232
-4 dc06 1233
+0 localhost 7234
+1 localhost 8233
+2 localhost 9233
+3 localhost 7232
+4 localhost 5233
 0 1 2
 1 0 3
 2 0 3
