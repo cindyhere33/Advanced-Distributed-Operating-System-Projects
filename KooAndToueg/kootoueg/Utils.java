@@ -43,7 +43,8 @@ public class Utils {
 	}
 
 	public static long getExponentialDistributedValue(int value) {
-		return (long) Math.floor((-value * Math.log(Math.random())));
+		//return (long) Math.floor((-value * Math.log(Math.random())));
+		return value;
 	}
 
 	public static void initVector(Main.VectorType type, int val) {

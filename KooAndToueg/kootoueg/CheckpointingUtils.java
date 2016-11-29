@@ -76,7 +76,7 @@ public class CheckpointingUtils {
 
 	public static void takeCheckpoint() {
 		if (Main.temporaryCheckpoint == null)
-			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointSequenceNumber + 1, Main.vectors);
+			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointsTaken.size(), Main.vectors);
 		Utils.updateVectors(EventType.CHECKPOINT, null);
 	}
 
@@ -86,9 +86,8 @@ public class CheckpointingUtils {
 	}
 
 	public static void announceCheckpointProtocolTermination() {
-		Utils.log("Announcing checkpoint protocol termination");
 		for (Integer id : Main.myNode.getNeighbours()) {
-			Message msg = new Message(Main.myNode.getId(), id, 0, TypeOfMessage.CHECKPOINT_FINAL, Main.myNode.getId(),
+			Message msg = new Message(Main.myNode.getId(), id, Main.checkpointRecoverySequence.size(), TypeOfMessage.CHECKPOINT_FINAL, Main.myNode.getId(),
 					null);
 			Client.sendMessage(msg);
 		}
@@ -101,6 +100,9 @@ public class CheckpointingUtils {
 			Main.checkpointingInProgress = true;
 			Utils.log("Set checkpointingInProgress to true");
 		} else {
+			if (Main.checkpointRecoverySequence.size() > 0){
+				Main.checkpointRecoverySequence.remove(0);
+			}
 			announceCheckpointProtocolTermination();
 			Main.checkpointingInProgress = false;
 		}

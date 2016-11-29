@@ -68,7 +68,8 @@ public class Server extends Thread {
 	}
 
 	private synchronized void handleMessage(Message message) {
-		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode());
+		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+				+ message.getLabel());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
@@ -99,16 +100,21 @@ public class Server extends Thread {
 				if (!Main.checkpointConfirmationsReceived.get(id))
 					allConfirmationsReceived = false;
 			}
+
 			if (allConfirmationsReceived) {
+				if (Main.checkpointRecoverySequence.size() > 0){
+					Main.checkpointRecoverySequence.remove(0);
+				}
 				CheckpointingUtils.makeCheckpointPermanent();
-				CheckpointingUtils.announceCheckpointProtocolTermination();
 			}
 			break;
 		case CHECKPOINT_FINAL:
-			CheckpointingUtils.makeCheckpointPermanent();
-			if (Main.checkpointRecoverySequence.size() > 0)
+			if (Main.checkpointRecoverySequence.size() > 0
+					&& message.getLabel() < Main.checkpointRecoverySequence.size()) {
 				Main.checkpointRecoverySequence.remove(0);
-			CheckpointingUtils.initiateCheckpointingIfMyTurn();
+				CheckpointingUtils.makeCheckpointPermanent();
+				CheckpointingUtils.initiateCheckpointingIfMyTurn();
+			}
 			break;
 		case CHECKPOINT_NOT_NEEDED:
 			if (Main.checkpointConfirmationsReceived.containsKey(message.getOriginNode())) {
