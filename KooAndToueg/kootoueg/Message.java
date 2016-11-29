@@ -15,7 +15,7 @@ public class Message implements Serializable {
 	private Integer label;
 
 	public enum TypeOfMessage {
-		APPLICATION, CHECKPOINT_INITIATION, CHECKPOINT_OK, CHECKPOINT_FINAL, RECOVERY
+		APPLICATION, CHECKPOINT_INITIATION, CHECKPOINT_OK, CHECKPOINT_FINAL, RECOVERY, CHECKPOINT_NOT_NEEDED
 	}
 
 	private TypeOfMessage messageType;

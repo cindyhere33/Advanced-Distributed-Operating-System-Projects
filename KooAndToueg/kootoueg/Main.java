@@ -65,8 +65,9 @@ public class Main {
 			Utils.setupVectors();
 			server = new Server(myNode.getHostName(), myNode.getPortNo());
 			server.start();
-			CheckpointingUtils.makeCheckpointPermanent();
+			Thread.sleep(7000);
 			Client.sendMessage();
+			checkpointsTaken.add(new Checkpoint(Main.checkpointSequenceNumber, Main.vectors));
 			CheckpointingUtils.initiateCheckpointingIfMyTurn();
 		} catch (Exception e) {
 			e.printStackTrace();

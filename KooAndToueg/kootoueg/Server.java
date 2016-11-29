@@ -67,39 +67,54 @@ public class Server extends Thread {
 		}
 	}
 
-	private void handleMessage(Message message) {
+	private synchronized void handleMessage(Message message) {
+		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
 			break;
 		case CHECKPOINT_INITIATION:
-			Main.checkpointingInProgress = true;
-			Utils.updateVectors(EventType.CHECKPOINT, null);
-			if (Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][message.getOriginNode()] > -1
-					&& Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][message.getOriginNode()] < message.getLabel()
-					&& Main.temporaryCheckpoint == null) {
-				Main.temporaryCheckpoint = new Checkpoint(Main.checkpointSequenceNumber + 1, Main.vectors, false);
+			if (Main.checkpointingInProgress)
+				break;
+			if (CheckpointingUtils.needsToTakeCheckpoint(message.getOriginNode(), message.getLabel())) {
+				Main.checkpointingInProgress = true;
+				CheckpointingUtils.hasSentCheckpointingRequests();
+				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.CHECKPOINT_OK,
+						message.getOriginNode(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+				Client.sendMessage(msg);
+			} else {
+				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
+						TypeOfMessage.CHECKPOINT_NOT_NEEDED, message.getOriginNode(), null);
+				Client.sendMessage(msg);
+				Utils.log("Sending checkpoint not needed to initiator : " + message.getOriginNode());
 			}
-			Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.CHECKPOINT_OK,
-					message.getOriginNode(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
-			Client.sendMessage(msg);
 			break;
 		case RECOVERY:
 			Utils.updateVectors(EventType.RECOVERY, message);
 			break;
 		case CHECKPOINT_OK:
 			Main.checkpointConfirmationsReceived.put(message.getOriginNode(), true);
-			if (Main.checkpointConfirmationsReceived.size() == Main.myNode.neighbours.size()) {
+			boolean allConfirmationsReceived = true;
+			for (Integer id : Main.checkpointConfirmationsReceived.keySet()) {
+				if (!Main.checkpointConfirmationsReceived.get(id))
+					allConfirmationsReceived = false;
+			}
+			if (allConfirmationsReceived) {
 				CheckpointingUtils.makeCheckpointPermanent();
-				for (Integer id : Main.myNode.neighbours) {
-					Client.sendMessage(new Message(Main.myNode.getId(), id, 0, TypeOfMessage.CHECKPOINT_FINAL,
-							Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]));
-				}
+				CheckpointingUtils.announceCheckpointProtocolTermination();
 			}
 			break;
 		case CHECKPOINT_FINAL:
 			CheckpointingUtils.makeCheckpointPermanent();
+			if (Main.checkpointRecoverySequence.size() > 0)
+				Main.checkpointRecoverySequence.remove(0);
 			CheckpointingUtils.initiateCheckpointingIfMyTurn();
+			break;
+		case CHECKPOINT_NOT_NEEDED:
+			if (Main.checkpointConfirmationsReceived.containsKey(message.getOriginNode())) {
+				Main.checkpointConfirmationsReceived.remove(message.getOriginNode());
+				Utils.log("Not awaiting checkpointing feedback from " + message.getOriginNode());
+			}
 			break;
 		}
 	}

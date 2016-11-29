@@ -27,14 +27,14 @@ public class Client {
 						return;
 					}
 					Main.msgCount++;
-					Message msg = new Message(Main.myNode.getId(), new Random().nextInt(Main.myNode.neighbours.size()),
+					Message msg = new Message(Main.myNode.getId(), Main.myNode.neighbours.get(new Random().nextInt(Main.myNode.neighbours.size())),
 							Main.msgCount, TypeOfMessage.APPLICATION, Main.myNode.getId(),
 							Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 					sendMessage(msg);
 					Utils.updateVectors(EventType.SEND_MSG, msg);
 				}
 			}
-		}, 1000, Main.sendDelay);
+		}, 1000, Utils.getExponentialDistributedValue(Main.sendDelay));
 	}
 
 	/*
