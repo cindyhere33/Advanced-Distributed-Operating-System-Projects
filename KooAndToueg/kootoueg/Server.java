@@ -106,6 +106,7 @@ public class Server extends Thread {
 					Main.checkpointRecoverySequence.remove(0);
 				}
 				CheckpointingUtils.makeCheckpointPermanent();
+				CheckpointingUtils.initiateCheckpointingIfMyTurn();
 			}
 			break;
 		case CHECKPOINT_FINAL:

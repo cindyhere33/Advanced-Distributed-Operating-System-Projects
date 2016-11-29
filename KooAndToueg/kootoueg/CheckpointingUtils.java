@@ -105,6 +105,7 @@ public class CheckpointingUtils {
 			}
 			announceCheckpointProtocolTermination();
 			Main.checkpointingInProgress = false;
+			CheckpointingUtils.initiateCheckpointingIfMyTurn();
 		}
 	}
 }
