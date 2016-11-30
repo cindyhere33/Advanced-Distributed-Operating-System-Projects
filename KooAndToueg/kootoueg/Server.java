@@ -68,8 +68,9 @@ public class Server extends Thread {
 	}
 
 	private synchronized void handleMessage(Message message) {
-//		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-//				+ message.getLabel());
+		// Utils.log("Received " + message.getMessageType().name() + " from " +
+		// message.getOriginNode() + " with label "
+		// + message.getLabel());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
@@ -89,14 +90,23 @@ public class Server extends Thread {
 				Client.sendMessage(msg);
 			}
 			break;
-		case RECOVERY:
-			Utils.updateVectors(EventType.RECOVERY, message);
+		case RECOVERY_INITIATION:
+			if (RecoveryUtils.needsToRollback(message.getOriginNode(), message.getLabel())) {
+				RecoveryUtils.rollback();
+				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.RECOVERY_OK,
+						message.getOriginNode(), null);
+				Client.sendMessage(msg);
+			} else {
+				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
+						TypeOfMessage.RECOVERY_NOT_NEEDED, message.getOriginNode(), null);
+				Client.sendMessage(msg);
+			}
 			break;
 		case CHECKPOINT_OK:
-			Main.checkpointConfirmationsReceived.put(message.getOriginNode(), true);
+			Main.confirmationsPending.put(message.getOriginNode(), true);
 			boolean allConfirmationsReceived = true;
-			for (Integer id : Main.checkpointConfirmationsReceived.keySet()) {
-				if (!Main.checkpointConfirmationsReceived.get(id))
+			for (Integer id : Main.confirmationsPending.keySet()) {
+				if (!Main.confirmationsPending.get(id))
 					allConfirmationsReceived = false;
 			}
 
@@ -105,7 +115,7 @@ public class Server extends Thread {
 					Main.checkpointRecoverySequence.remove(0);
 				}
 				CheckpointingUtils.makeCheckpointPermanent();
-				CheckpointingUtils.initiateCheckpointingIfMyTurn();
+				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;
 		case CHECKPOINT_FINAL:
@@ -113,13 +123,25 @@ public class Server extends Thread {
 					&& message.getLabel() < Main.checkpointRecoverySequence.size()) {
 				Main.checkpointRecoverySequence.remove(0);
 				CheckpointingUtils.makeCheckpointPermanent();
-				CheckpointingUtils.initiateCheckpointingIfMyTurn();
+				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;
 		case CHECKPOINT_NOT_NEEDED:
-			if (Main.checkpointConfirmationsReceived.containsKey(message.getOriginNode())) {
-				Main.checkpointConfirmationsReceived.remove(message.getOriginNode());
+			if (Main.confirmationsPending.containsKey(message.getOriginNode())) {
+				Main.confirmationsPending.remove(message.getOriginNode());
 			}
+			break;
+		case RECOVERY_CONCLUDED:
+			break;
+		case RECOVERY_NOT_NEEDED:
+			if (Main.confirmationsPending.containsKey(message.getOriginNode())) {
+				Main.confirmationsPending.remove(message.getOriginNode());
+			}
+			break;
+		case RECOVERY_OK:
+			
+			break;
+		default:
 			break;
 		}
 	}

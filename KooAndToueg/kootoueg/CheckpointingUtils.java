@@ -1,7 +1,5 @@
 package kootoueg;
 
-import java.util.Timer;
-
 import kootoueg.Main.EventType;
 import kootoueg.Main.VectorType;
 import kootoueg.Message.TypeOfMessage;
@@ -19,35 +17,11 @@ public class CheckpointingUtils {
 		Utils.logVectors();
 	}
 
-	public static void initiateCheckpointingIfMyTurn() {
-		if (Main.checkpointRecoverySequence.size() > 0
-				&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
-			Utils.log("My Checkpointing turn: ");
-			Timer timer = new Timer();
-			timer.schedule(new java.util.TimerTask() {
-				@Override
-				public void run() {
-					if (Main.checkpointRecoverySequence.size() > 0
-							&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
-						if (Main.checkpointRecoverySequence.get(0).type == EventType.CHECKPOINT) {
-							Utils.log("Initiating checkpointing protocol");
-							initiateCheckpointProtocol();
-						} else {
-							// initiateRecovery();
-						}
-
-					}
-				}
-			}, Utils.getExponentialDistributedValue(Main.instanceDelay));
-
-		}
-	}
-
 	/*
 	 * Set checkpointintInProgress to true. Send messages to all neighbours to
 	 * start checkpointing
 	 */
-	public static boolean hasSentCheckpointingRequests() {
+	public static boolean hasSentCheckpointingRequests(Integer initiatorId) {
 		boolean shouldTakeCheckpoint = false;
 		for (Integer id : Main.myNode.neighbours) {
 			if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id.intValue()] > -1) {
@@ -55,7 +29,7 @@ public class CheckpointingUtils {
 						Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id], TypeOfMessage.CHECKPOINT_INITIATION,
 						Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 				Client.sendMessage(msg);
-				Main.checkpointConfirmationsReceived.put(id, false);
+				Main.confirmationsPending.put(id, false);
 				shouldTakeCheckpoint = true;
 			}
 		}
@@ -70,7 +44,7 @@ public class CheckpointingUtils {
 	public static void takeCheckpoint() {
 		if (Main.temporaryCheckpoint == null)
 			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointsTaken.size(), Main.vectors);
-//		Utils.logVectors();
+		// Utils.logVectors();
 		Utils.updateVectors(EventType.CHECKPOINT, null);
 
 	}
@@ -90,8 +64,8 @@ public class CheckpointingUtils {
 	}
 
 	public static void initiateCheckpointProtocol() {
-		//Utils.logVectors();
-		if (hasSentCheckpointingRequests()) {
+		// Utils.logVectors();
+		if (hasSentCheckpointingRequests(Main.myNode.getId())) {
 			Main.checkpointingInProgress = true;
 		} else {
 			if (Main.checkpointRecoverySequence.size() > 0) {
@@ -99,7 +73,8 @@ public class CheckpointingUtils {
 			}
 			announceCheckpointProtocolTermination();
 			Main.checkpointingInProgress = false;
-			CheckpointingUtils.initiateCheckpointingIfMyTurn();
+			Main.initiateCheckpointOrRecoveryIfMyTurn();
 		}
 	}
+
 }

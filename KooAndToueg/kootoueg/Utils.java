@@ -91,7 +91,6 @@ public class Utils {
 			break;
 		case RECOVERY:
 			Utils.initVector(VectorType.LAST_LABEL_RECEIVED, -1);
-			Utils.initVector(VectorType.LAST_LABEL_SENT, -1);
 			break;
 		}
 	}
