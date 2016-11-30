@@ -44,7 +44,7 @@ public class Client {
 	 */
 	public static void sendMessage(Message message) {
 		Node nextNode = Main.nodeMap.get(message.getDestinationNode());
-//		Utils.log("Sent " + message.getMessageType() + " to -> " + nextNode.getId() + "\n");
+		Utils.log("Sent " + message.getMessageType() + " to -> " + nextNode.getId() + "\n");
 		InetSocketAddress socketAddr = new InetSocketAddress(nextNode.getHostName(), nextNode.getPortNo());
 		sendToSocket(socketAddr, message);
 	}

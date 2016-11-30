@@ -1,7 +1,5 @@
 package kootoueg;
 
-import java.util.Timer;
-
 import kootoueg.Main.EventType;
 import kootoueg.Main.VectorType;
 import kootoueg.Message.TypeOfMessage;
@@ -19,29 +17,7 @@ public class CheckpointingUtils {
 		Utils.logVectors();
 	}
 
-	public static void initiateCheckpointingIfMyTurn() {
-		if (Main.checkpointRecoverySequence.size() > 0
-				&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
-			Utils.log("My Checkpointing turn: ");
-			Timer timer = new Timer();
-			timer.schedule(new java.util.TimerTask() {
-				@Override
-				public void run() {
-					if (Main.checkpointRecoverySequence.size() > 0
-							&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
-						if (Main.checkpointRecoverySequence.get(0).type == EventType.CHECKPOINT) {
-							Utils.log("Initiating checkpointing protocol");
-							initiateCheckpointProtocol();
-						} else {
-							// initiateRecovery();
-						}
-
-					}
-				}
-			}, Utils.getExponentialDistributedValue(Main.instanceDelay));
-
-		}
-	}
+	
 
 	/*
 	 * Set checkpointintInProgress to true. Send messages to all neighbours to
@@ -55,7 +31,7 @@ public class CheckpointingUtils {
 						Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id], TypeOfMessage.CHECKPOINT_INITIATION,
 						Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 				Client.sendMessage(msg);
-				Main.checkpointConfirmationsReceived.put(id, false);
+				Main.confirmationsPending.put(id, false);
 				shouldTakeCheckpoint = true;
 			}
 		}
@@ -99,7 +75,7 @@ public class CheckpointingUtils {
 			}
 			announceCheckpointProtocolTermination();
 			Main.checkpointingInProgress = false;
-			CheckpointingUtils.initiateCheckpointingIfMyTurn();
+			Main.initiateCheckpointOrRecoveryIfMyTurn();
 		}
 	}
 }

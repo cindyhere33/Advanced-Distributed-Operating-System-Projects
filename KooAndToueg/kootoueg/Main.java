@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
 
 public class Main {
 
@@ -26,13 +27,10 @@ public class Main {
 	// 4.LastLabelSent
 	public static Integer[][] vectors;
 
-	
 	/*
-	 * Main.vectors[0] = VECTOR_CLOCK
-	 * Main.vectors[1] = FIRST_LABEL_SENT
-	 * Main.vectors[2] = LAST_LABEL_RECEIVED
-	 * Main.vectors[3] = LAST_LABEL_SENT
-	*/
+	 * Main.vectors[0] = VECTOR_CLOCK Main.vectors[1] = FIRST_LABEL_SENT
+	 * Main.vectors[2] = LAST_LABEL_RECEIVED Main.vectors[3] = LAST_LABEL_SENT
+	 */
 	public static enum VectorType {
 		VECTOR_CLOCK, FIRST_LABEL_SENT, LAST_LABEL_RECEIVED, LAST_LABEL_SENT
 	}
@@ -49,14 +47,16 @@ public class Main {
 
 	public static Integer instanceDelay = 0, sendDelay = 0, msgCount = 0, totalNoOfMsgs = 0;
 
-	//Sequence given in the Config file
+	// Sequence given in the Config file
 	public static List<EventSequence> checkpointRecoverySequence = new ArrayList<>();
 
 	public static boolean checkpointingInProgress = false;
 
 	public static Checkpoint temporaryCheckpoint = null;
 
-	public static HashMap<Integer, Boolean> checkpointConfirmationsReceived = new HashMap<>();
+	public static HashMap<Integer, Boolean> confirmationsPending = new HashMap<>();
+
+	public static Integer recoveryInitiator = null;
 
 	public static void main(String[] args) throws IOException {
 		try {
@@ -68,9 +68,33 @@ public class Main {
 			Thread.sleep(7000);
 			Client.sendMessage();
 			checkpointsTaken.add(new Checkpoint(Main.checkpointSequenceNumber, Main.vectors));
-			CheckpointingUtils.initiateCheckpointingIfMyTurn();
+			initiateCheckpointOrRecoveryIfMyTurn();
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	public static void initiateCheckpointOrRecoveryIfMyTurn() {
+		if (Main.checkpointRecoverySequence.size() > 0
+				&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
+			Utils.log("My Checkpointing turn: ");
+			Timer timer = new Timer();
+			timer.schedule(new java.util.TimerTask() {
+				@Override
+				public void run() {
+					if (Main.checkpointRecoverySequence.size() > 0
+							&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
+						if (Main.checkpointRecoverySequence.get(0).type == EventType.CHECKPOINT) {
+							Utils.log("Initiating checkpointing protocol");
+							CheckpointingUtils.initiateCheckpointProtocol();
+						} else {
+							Utils.log("Initiating recovery protocol");
+							RecoveryUtils.initiateRecoveryProtocol();
+						}
+					}
+				}
+			}, Utils.getExponentialDistributedValue(Main.instanceDelay));
+
 		}
 	}
 

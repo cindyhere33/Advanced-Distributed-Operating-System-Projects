@@ -15,16 +15,17 @@ public class Message implements Serializable {
 	private Integer label;
 
 	public enum TypeOfMessage {
-		APPLICATION, CHECKPOINT_INITIATION, CHECKPOINT_OK, CHECKPOINT_FINAL, RECOVERY, CHECKPOINT_NOT_NEEDED
+		APPLICATION, CHECKPOINT_INITIATION, CHECKPOINT_OK, CHECKPOINT_FINAL, RECOVERY_INITIATION, CHECKPOINT_NOT_NEEDED, RECOVERY_NOT_NEEDED, RECOVERY_CONCLUDED
 	}
 
 	private TypeOfMessage messageType;
 
 	private Integer initiator;
-	
+
 	private Integer[] vectorClock;
 
-	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType, Integer initiator, Integer[] vectorClock) {
+	public Message(Integer sender, Integer receiver, Integer label, TypeOfMessage messageType, Integer initiator,
+			Integer[] vectorClock) {
 		this.originNode = sender;
 		this.messageType = messageType;
 		this.destinationNode = receiver;
