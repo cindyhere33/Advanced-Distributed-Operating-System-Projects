@@ -7,8 +7,10 @@ import kootoueg.Message.TypeOfMessage;
 public class RecoveryUtils {
 
 	public static void initiateRecoveryProtocol() {
+		Utils.log("Checkpoints taken so far .. " + Main.checkpointsTaken.size());
+		Utils.logVectors();
 		if (Main.checkpointsTaken.size() > 1) {
-			Main.recoveryInitiator = Main.myNode.getId();
+			Main.myCheckpointOrRecoveryInitiator = Main.myNode.getId();
 			rollback();
 			sendRecoveryRequest();
 		} else {

@@ -56,8 +56,8 @@ public class Main {
 
 	public static HashMap<Integer, Boolean> confirmationsPending = new HashMap<>();
 
-	public static Integer recoveryInitiator = null;
-
+	public static Integer myCheckpointOrRecoveryInitiator = null;
+	
 	public static void main(String[] args) throws IOException {
 		try {
 			ConfigParser parser = new ConfigParser(args[0]);
@@ -68,6 +68,7 @@ public class Main {
 			Thread.sleep(7000);
 			Client.sendMessage();
 			checkpointsTaken.add(new Checkpoint(Main.checkpointSequenceNumber, Main.vectors));
+			Thread.sleep(2000);
 			initiateCheckpointOrRecoveryIfMyTurn();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -78,6 +79,7 @@ public class Main {
 		if (Main.checkpointRecoverySequence.size() > 0
 				&& Main.checkpointRecoverySequence.get(0).nodeId.equals(Main.myNode.getId())) {
 			Utils.log("My Checkpointing turn: ");
+			Utils.logVectors();
 			Timer timer = new Timer();
 			timer.schedule(new java.util.TimerTask() {
 				@Override

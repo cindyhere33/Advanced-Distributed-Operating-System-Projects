@@ -83,7 +83,7 @@ public class Utils {
 				}
 			}
 			Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][Main.myNode.getId()]++;
-			Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][msg.getDestinationNode()] = msg.getLabel();
+			Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][msg.getOriginNode()] = msg.getLabel();
 			break;
 		case CHECKPOINT:
 			Utils.initVector(VectorType.LAST_LABEL_RECEIVED, -1);

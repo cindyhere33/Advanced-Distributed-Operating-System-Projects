@@ -67,31 +67,39 @@ public class Server extends Thread {
 		}
 	}
 
+	// Check if initiator or not
 	private synchronized void handleMessage(Message message) {
-		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-				+ message.getLabel());
+//		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+//				+ message.getLabel());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
 			break;
 		case CHECKPOINT_INITIATION:
-			if (Main.checkpointingInProgress)
-				break;
-			if (CheckpointingUtils.needsToTakeCheckpoint(message.getOriginNode(), message.getLabel())) {
-				Main.checkpointingInProgress = true;
-				CheckpointingUtils.hasSentCheckpointingRequests();
-				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.CHECKPOINT_OK,
-						message.getOriginNode(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
-				Client.sendMessage(msg);
-			} else {
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
+			
+			if (Main.checkpointingInProgress
+					|| !CheckpointingUtils.needsToTakeCheckpoint(message.getOriginNode(), message.getLabel())) {
 				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
 						TypeOfMessage.CHECKPOINT_NOT_NEEDED, message.getOriginNode(), null);
 				Client.sendMessage(msg);
+			} else {
+				Main.checkpointingInProgress = true;
+				Main.myCheckpointOrRecoveryInitiator = message.getOriginNode();
+				CheckpointingUtils.takeTentativeCheckpoint();
+				if (!CheckpointingUtils.hasSentCheckpointingRequests()) {
+					Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
+							TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(), null);
+					Client.sendMessage(msg);
+				}
 			}
 			break;
 		case RECOVERY_INITIATION:
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
 			if (RecoveryUtils.needsToRollback(message.getOriginNode(), message.getLabel())) {
-				Main.recoveryInitiator = message.getOriginNode();
+				Main.myCheckpointOrRecoveryInitiator = message.getOriginNode();
 				RecoveryUtils.sendRecoveryRequest();
 			} else {
 				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
@@ -100,6 +108,8 @@ public class Server extends Thread {
 			}
 			break;
 		case CHECKPOINT_OK:
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
 			Main.confirmationsPending.put(message.getOriginNode(), true);
 			boolean allConfirmationsReceived = true;
 			for (Integer id : Main.confirmationsPending.keySet()) {
@@ -108,47 +118,70 @@ public class Server extends Thread {
 			}
 
 			if (allConfirmationsReceived) {
-				if (Main.checkpointRecoverySequence.size() > 0) {
-					Main.checkpointRecoverySequence.remove(0);
+				if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
+					if (Main.checkpointRecoverySequence.size() > 0) {
+						Main.checkpointRecoverySequence.remove(0);
+					}
+					CheckpointingUtils.makeCheckpointPermanent();
+					CheckpointingUtils.announceCheckpointProtocolTermination();
+					Main.initiateCheckpointOrRecoveryIfMyTurn();
+				} else {
+					Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
+							TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(),
+							Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+					Client.sendMessage(msg);
 				}
-				CheckpointingUtils.makeCheckpointPermanent();
-				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;
 		case CHECKPOINT_FINAL:
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
 			if (Main.checkpointRecoverySequence.size() > 0
 					&& message.getLabel() < Main.checkpointRecoverySequence.size()) {
 				Main.checkpointRecoverySequence.remove(0);
 				CheckpointingUtils.makeCheckpointPermanent();
+				CheckpointingUtils.announceCheckpointProtocolTermination();
 				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;
 		case CHECKPOINT_NOT_NEEDED:
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
 			if (Main.confirmationsPending.containsKey(message.getOriginNode())) {
 				Main.confirmationsPending.remove(message.getOriginNode());
 			}
+			if (Main.confirmationsPending.size() == 0) {
+				Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
+						TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(),
+						Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+				Client.sendMessage(msg);
+			}
 			break;
 		case RECOVERY_CONCLUDED:
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
 			if (Main.checkpointRecoverySequence.size() > 0
 					&& message.getLabel() < Main.checkpointRecoverySequence.size()) {
 				Main.checkpointRecoverySequence.remove(0);
-				Main.recoveryInitiator = null;
+				Main.myCheckpointOrRecoveryInitiator = null;
 				RecoveryUtils.announceRecoveryProtocolTermination();
 				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;
 		case RECOVERY_NOT_NEEDED:
+			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
+					+ message.getLabel());
 			if (Main.confirmationsPending.containsKey(message.getOriginNode())) {
 				Main.confirmationsPending.remove(message.getOriginNode());
 			}
 			if (Main.confirmationsPending.size() == 0) {
-				if (Main.recoveryInitiator.equals(Main.myNode.getId())) {
-					Main.recoveryInitiator = null;
+				if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
+					Main.myCheckpointOrRecoveryInitiator = null;
 					RecoveryUtils.announceRecoveryProtocolTermination();
 					Main.initiateCheckpointOrRecoveryIfMyTurn();
 				} else {
-					Message msg = new Message(Main.myNode.getId(), Main.recoveryInitiator, 0,
-							TypeOfMessage.RECOVERY_NOT_NEEDED, Main.recoveryInitiator, null);
+					Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
+							TypeOfMessage.RECOVERY_NOT_NEEDED, Main.myCheckpointOrRecoveryInitiator, null);
 					Client.sendMessage(msg);
 				}
 			}
