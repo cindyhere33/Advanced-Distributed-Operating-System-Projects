@@ -71,7 +71,7 @@ public class Utils {
 
 		case SEND_MSG:
 			Main.vectors[VectorType.VECTOR_CLOCK.ordinal()][Main.myNode.getId()]++;
-			if (Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][msg.getDestinationNode()] == 0) {
+			if (Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][msg.getDestinationNode()] == -1) {
 				Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][msg.getDestinationNode()] = msg.getLabel();
 			}
 			Main.vectors[VectorType.LAST_LABEL_SENT.ordinal()][msg.getDestinationNode()] = msg.getLabel();
@@ -118,5 +118,13 @@ public class Utils {
 		}
 		line.append("\n");
 		Utils.log(line.toString());
+	}
+
+	public static void logConfirmationsRecieved() {
+		StringBuffer buff = new StringBuffer();
+		for (Integer id : Main.confirmationsPending.keySet()) {
+			buff.append(id + " - " + Main.confirmationsPending.get(id));
+		}
+		Utils.log("Confirmations pending = \n " + buff);
 	}
 }

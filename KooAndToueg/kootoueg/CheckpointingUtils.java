@@ -23,11 +23,15 @@ public class CheckpointingUtils {
 	public static boolean hasSentCheckpointingRequests() {
 		boolean sentRequests = false;
 		for (Integer id : Main.myNode.neighbours) {
-			if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id] > -1) {
+			Utils.log("Checking if has to send checkpoint request to  " + id + " - "
+					+ Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id].intValue());
+
+			if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id].intValue() > -1) {
 				Message msg = new Message(Main.myNode.getId(), id,
 						Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id], TypeOfMessage.CHECKPOINT_INITIATION,
 						Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 				Client.sendMessage(msg);
+				Utils.log("Added checkpoint confirmation pending of " + id);
 				Main.confirmationsPending.put(id, false);
 				sentRequests = true;
 			}
@@ -56,6 +60,7 @@ public class CheckpointingUtils {
 		Main.checkpointingInProgress = false;
 		Main.myCheckpointOrRecoveryInitiator = null;
 		Main.temporaryCheckpoint = null;
+		Main.confirmationsPending.clear();
 	}
 
 	public static void initiateCheckpointProtocol() {
@@ -63,8 +68,8 @@ public class CheckpointingUtils {
 		if (hasSentCheckpointingRequests()) {
 			Main.checkpointingInProgress = true;
 			takeTentativeCheckpoint();
-			Main.myCheckpointOrRecoveryInitiator = Main.myNode.getId();
 		} else {
+			Utils.log("Sending messages not required. Announcing protocol termination");
 			if (Main.checkpointRecoverySequence.size() > 0) {
 				Main.checkpointRecoverySequence.remove(0);
 			}
@@ -72,4 +77,5 @@ public class CheckpointingUtils {
 			Main.initiateCheckpointOrRecoveryIfMyTurn();
 		}
 	}
+
 }

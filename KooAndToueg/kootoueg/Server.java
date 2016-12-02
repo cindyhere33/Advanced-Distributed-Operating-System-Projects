@@ -15,10 +15,6 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.ShutdownNotification;
 
-import kootoueg.Main.EventType;
-import kootoueg.Main.VectorType;
-import kootoueg.Message.TypeOfMessage;
-
 public class Server extends Thread {
 
 	// Server socket
@@ -35,9 +31,7 @@ public class Server extends Thread {
 		this.portNo = portNo;
 	}
 
-	/*
-	 * Starts listening on the port. Handles the received tokens appropriately.
-	 */
+	
 	@Override
 	public void run() {
 		InetSocketAddress serverAdd = new InetSocketAddress(Main.myNode.getHostName(), Main.myNode.getPortNo());
@@ -54,7 +48,7 @@ public class Server extends Thread {
 				if (bytebuf.remaining() > 0) {
 					ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytebuf.array()));
 					Message message = (Message) ois.readObject();
-					handleMessage(message);
+					Main.handleMessage(message);
 					ois.close();
 				}
 				sc.close();
@@ -66,134 +60,8 @@ public class Server extends Thread {
 			e.printStackTrace();
 		}
 	}
-
-	// Check if initiator or not
-	private synchronized void handleMessage(Message message) {
-//		Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-//				+ message.getLabel());
-		switch (message.getMessageType()) {
-		case APPLICATION:
-			Utils.updateVectors(EventType.RECEIVE_MSG, message);
-			break;
-		case CHECKPOINT_INITIATION:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			
-			if (Main.checkpointingInProgress
-					|| !CheckpointingUtils.needsToTakeCheckpoint(message.getOriginNode(), message.getLabel())) {
-				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
-						TypeOfMessage.CHECKPOINT_NOT_NEEDED, message.getOriginNode(), null);
-				Client.sendMessage(msg);
-			} else {
-				Main.checkpointingInProgress = true;
-				Main.myCheckpointOrRecoveryInitiator = message.getOriginNode();
-				CheckpointingUtils.takeTentativeCheckpoint();
-				if (!CheckpointingUtils.hasSentCheckpointingRequests()) {
-					Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
-							TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(), null);
-					Client.sendMessage(msg);
-				}
-			}
-			break;
-		case RECOVERY_INITIATION:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			if (RecoveryUtils.needsToRollback(message.getOriginNode(), message.getLabel())) {
-				Main.myCheckpointOrRecoveryInitiator = message.getOriginNode();
-				RecoveryUtils.sendRecoveryRequest();
-			} else {
-				Message msg = new Message(Main.myNode.getId(), message.getOriginNode(), 0,
-						TypeOfMessage.RECOVERY_NOT_NEEDED, message.getOriginNode(), null);
-				Client.sendMessage(msg);
-			}
-			break;
-		case CHECKPOINT_OK:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			Main.confirmationsPending.put(message.getOriginNode(), true);
-			boolean allConfirmationsReceived = true;
-			for (Integer id : Main.confirmationsPending.keySet()) {
-				if (!Main.confirmationsPending.get(id))
-					allConfirmationsReceived = false;
-			}
-
-			if (allConfirmationsReceived) {
-				if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
-					if (Main.checkpointRecoverySequence.size() > 0) {
-						Main.checkpointRecoverySequence.remove(0);
-					}
-					CheckpointingUtils.makeCheckpointPermanent();
-					CheckpointingUtils.announceCheckpointProtocolTermination();
-					Main.initiateCheckpointOrRecoveryIfMyTurn();
-				} else {
-					Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
-							TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(),
-							Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
-					Client.sendMessage(msg);
-				}
-			}
-			break;
-		case CHECKPOINT_FINAL:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			if (Main.checkpointRecoverySequence.size() > 0
-					&& message.getLabel() < Main.checkpointRecoverySequence.size()) {
-				Main.checkpointRecoverySequence.remove(0);
-				CheckpointingUtils.makeCheckpointPermanent();
-				CheckpointingUtils.announceCheckpointProtocolTermination();
-				Main.initiateCheckpointOrRecoveryIfMyTurn();
-			}
-			break;
-		case CHECKPOINT_NOT_NEEDED:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			if (Main.confirmationsPending.containsKey(message.getOriginNode())) {
-				Main.confirmationsPending.remove(message.getOriginNode());
-			}
-			if (Main.confirmationsPending.size() == 0) {
-				Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
-						TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(),
-						Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
-				Client.sendMessage(msg);
-			}
-			break;
-		case RECOVERY_CONCLUDED:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			if (Main.checkpointRecoverySequence.size() > 0
-					&& message.getLabel() < Main.checkpointRecoverySequence.size()) {
-				Main.checkpointRecoverySequence.remove(0);
-				Main.myCheckpointOrRecoveryInitiator = null;
-				RecoveryUtils.announceRecoveryProtocolTermination();
-				Main.initiateCheckpointOrRecoveryIfMyTurn();
-			}
-			break;
-		case RECOVERY_NOT_NEEDED:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode() + " with label "
-					+ message.getLabel());
-			if (Main.confirmationsPending.containsKey(message.getOriginNode())) {
-				Main.confirmationsPending.remove(message.getOriginNode());
-			}
-			if (Main.confirmationsPending.size() == 0) {
-				if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
-					Main.myCheckpointOrRecoveryInitiator = null;
-					RecoveryUtils.announceRecoveryProtocolTermination();
-					Main.initiateCheckpointOrRecoveryIfMyTurn();
-				} else {
-					Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
-							TypeOfMessage.RECOVERY_NOT_NEEDED, Main.myCheckpointOrRecoveryInitiator, null);
-					Client.sendMessage(msg);
-				}
-			}
-			break;
-		default:
-			break;
-		}
-	}
-
-	/*
-	 * Close the server socket
-	 */
+	
+	 
 	@SuppressWarnings("deprecation")
 	@Override
 	public void destroy() {
@@ -206,9 +74,8 @@ public class Server extends Thread {
 		}
 	}
 
-	/*
-	 * Handles associations with the Server's socket
-	 */
+	
+	 
 	static class AssociationHandler extends AbstractNotificationHandler<PrintStream> {
 		public HandlerResult handleNotification(AssociationChangeNotification not, PrintStream stream) {
 			if (not.event().equals(AssocChangeEvent.COMM_UP)) {
