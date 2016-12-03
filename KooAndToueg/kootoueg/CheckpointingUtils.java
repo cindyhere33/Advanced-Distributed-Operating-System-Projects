@@ -7,13 +7,10 @@ import kootoueg.Message.TypeOfMessage;
 public class CheckpointingUtils {
 
 	public static void makeCheckpointPermanent() {
-		Utils.log("About to make checkpoint permanent");
 		if (Main.temporaryCheckpoint != null) {
 			Main.checkpointsTaken.add(Main.temporaryCheckpoint);
-			Utils.log("Made checkpoint permanent : " + Main.temporaryCheckpoint.getSequenceNumber());
-			Utils.logVectorClock();
+			Utils.logCheckpoint();
 		}
-		Utils.logVectors();
 	}
 
 	/*
@@ -23,15 +20,13 @@ public class CheckpointingUtils {
 	public static boolean hasSentCheckpointingRequests() {
 		boolean sentRequests = false;
 		for (Integer id : Main.myNode.neighbours) {
-			Utils.log("Checking if has to send checkpoint request to  " + id + " - "
-					+ Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id].intValue());
-
+			if (id.equals(Main.myCheckpointOrRecoveryInitiator))
+				continue;
 			if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id].intValue() > -1) {
 				Message msg = new Message(Main.myNode.getId(), id,
 						Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id], TypeOfMessage.CHECKPOINT_INITIATION,
 						Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 				Client.sendMessage(msg);
-				Utils.log("Added checkpoint confirmation pending of " + id);
 				Main.confirmationsPending.put(id, false);
 				sentRequests = true;
 			}
@@ -42,7 +37,6 @@ public class CheckpointingUtils {
 	public static void takeTentativeCheckpoint() {
 		if (Main.temporaryCheckpoint == null)
 			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointsTaken.size(), Main.vectors);
-		Utils.log("Temporary checkpoint taken");
 		Utils.updateVectors(EventType.CHECKPOINT, null);
 	}
 
@@ -64,17 +58,38 @@ public class CheckpointingUtils {
 	}
 
 	public static void initiateCheckpointProtocol() {
-		Utils.logVectors();
 		if (hasSentCheckpointingRequests()) {
 			Main.checkpointingInProgress = true;
 			takeTentativeCheckpoint();
 		} else {
-			Utils.log("Sending messages not required. Announcing protocol termination");
 			if (Main.checkpointRecoverySequence.size() > 0) {
 				Main.checkpointRecoverySequence.remove(0);
 			}
 			announceCheckpointProtocolTermination();
 			Main.initiateCheckpointOrRecoveryIfMyTurn();
+		}
+	}
+
+	public static void onAllConfirmationsReceived() {
+		boolean allConfirmationsReceived = true;
+		for (Integer id : Main.confirmationsPending.keySet()) {
+			if (!Main.confirmationsPending.get(id))
+				allConfirmationsReceived = false;
+		}
+
+		if (allConfirmationsReceived) {
+			if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
+				if (Main.checkpointRecoverySequence.size() > 0) {
+					Main.checkpointRecoverySequence.remove(0);
+				}
+				CheckpointingUtils.makeCheckpointPermanent();
+				CheckpointingUtils.announceCheckpointProtocolTermination();
+				Main.initiateCheckpointOrRecoveryIfMyTurn();
+			} else {
+				Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
+						TypeOfMessage.CHECKPOINT_OK, 0, Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+				Client.sendMessage(msg);
+			}
 		}
 	}
 

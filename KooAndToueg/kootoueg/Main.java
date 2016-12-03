@@ -82,8 +82,6 @@ public class Main {
 
 	public static void initiateCheckpointOrRecoveryIfMyTurn() {
 		if (checkpointRecoverySequence.size() > 0 && checkpointRecoverySequence.get(0).nodeId.equals(myNode.getId())) {
-			Utils.log("My Checkpointing turn: ");
-			Utils.logVectors();
 			Timer timer = new Timer();
 			timer.schedule(new java.util.TimerTask() {
 				@Override
@@ -91,9 +89,7 @@ public class Main {
 					if (checkpointRecoverySequence.size() > 0
 							&& checkpointRecoverySequence.get(0).nodeId.equals(myNode.getId())) {
 						Main.myCheckpointOrRecoveryInitiator = Main.myNode.getId();
-						Utils.log("Checkpoint initiator = " + Main.myCheckpointOrRecoveryInitiator);
 						if (checkpointRecoverySequence.get(0).type == EventType.CHECKPOINT) {
-							Utils.log("Initiating checkpointing protocol");
 							Main.checkpointingInProgress = true;
 							CheckpointingUtils.initiateCheckpointProtocol();
 						} else {
@@ -109,17 +105,11 @@ public class Main {
 
 	// Check if initiator or not
 	public synchronized static void handleMessage(Message message) {
-		// Utils.log("Received " + message.getMessageType().name() + " from " +
-		// message.getOriginNode() + " with label "
-		// + message.getLabel());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
 			break;
 		case CHECKPOINT_INITIATION:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
-			Utils.logVectors();
 
 			if (checkpointingInProgress
 					|| !CheckpointingUtils.needsToTakeCheckpoint(message.getOriginNode(), message.getLabel())) {
@@ -129,7 +119,6 @@ public class Main {
 			} else {
 				checkpointingInProgress = true;
 				myCheckpointOrRecoveryInitiator = message.getOriginNode();
-				Utils.log("My checkpoint initiator = " + myCheckpointOrRecoveryInitiator);
 				if (!CheckpointingUtils.hasSentCheckpointingRequests()) {
 					Message msg = new Message(myNode.getId(), myCheckpointOrRecoveryInitiator, 0,
 							TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(), null);
@@ -151,39 +140,10 @@ public class Main {
 			}
 			break;
 		case CHECKPOINT_OK:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
 			confirmationsPending.put(message.getOriginNode(), true);
-			boolean allConfirmationsReceived = true;
-			for (Integer id : confirmationsPending.keySet()) {
-				if (!confirmationsPending.get(id))
-					allConfirmationsReceived = false;
-			}
-
-			if (allConfirmationsReceived) {
-				Utils.logConfirmationsRecieved();
-				if (myCheckpointOrRecoveryInitiator == null)
-					Utils.log("Initiator is null");
-				else if (myNode == null)
-					Utils.log("My node is null");
-				if (myCheckpointOrRecoveryInitiator.equals(myNode.getId())) {
-					if (checkpointRecoverySequence.size() > 0) {
-						checkpointRecoverySequence.remove(0);
-					}
-					CheckpointingUtils.makeCheckpointPermanent();
-					CheckpointingUtils.announceCheckpointProtocolTermination();
-					Main.initiateCheckpointOrRecoveryIfMyTurn();
-				} else {
-					Message msg = new Message(myNode.getId(), myCheckpointOrRecoveryInitiator, 0,
-							TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(),
-							Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
-					Client.sendMessage(msg);
-				}
-			}
+			CheckpointingUtils.onAllConfirmationsReceived();
 			break;
 		case CHECKPOINT_FINAL:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
 			if (checkpointRecoverySequence.size() > 0 && message.getLabel() < checkpointRecoverySequence.size()) {
 				checkpointRecoverySequence.remove(0);
 				CheckpointingUtils.makeCheckpointPermanent();
@@ -192,21 +152,12 @@ public class Main {
 			}
 			break;
 		case CHECKPOINT_NOT_NEEDED:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
 			if (confirmationsPending.containsKey(message.getOriginNode())) {
 				confirmationsPending.remove(message.getOriginNode());
 			}
-			if (confirmationsPending.size() == 0) {
-				Message msg = new Message(myNode.getId(), myCheckpointOrRecoveryInitiator, 0,
-						TypeOfMessage.CHECKPOINT_OK, message.getOriginNode(),
-						Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
-				Client.sendMessage(msg);
-			}
+			CheckpointingUtils.onAllConfirmationsReceived();
 			break;
 		case RECOVERY_CONCLUDED:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
 			if (checkpointRecoverySequence.size() > 0 && message.getLabel() < checkpointRecoverySequence.size()) {
 				checkpointRecoverySequence.remove(0);
 				myCheckpointOrRecoveryInitiator = null;

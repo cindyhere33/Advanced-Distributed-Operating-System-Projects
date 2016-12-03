@@ -8,7 +8,7 @@ public class RecoveryUtils {
 
 	public static void initiateRecoveryProtocol() {
 		Utils.log("Checkpoints taken so far .. " + Main.checkpointsTaken.size());
-		Utils.logVectors();
+		//Utils.logVectors();
 		if (Main.checkpointsTaken.size() > 1) {
 			Main.myCheckpointOrRecoveryInitiator = Main.myNode.getId();
 			rollback();

@@ -96,7 +96,7 @@ public class Utils {
 		}
 	}
 
-	public static void logVectors() {
+	public static void logVectors2() {
 		StringBuffer line = new StringBuffer();
 		int i = 0;
 		for (Integer[] vector : Main.vectors) {
@@ -123,8 +123,23 @@ public class Utils {
 	public static void logConfirmationsRecieved() {
 		StringBuffer buff = new StringBuffer();
 		for (Integer id : Main.confirmationsPending.keySet()) {
-			buff.append(id + " - " + Main.confirmationsPending.get(id));
+			buff.append(id + " - " + Main.confirmationsPending.get(id) + "\n");
 		}
 		Utils.log("Confirmations pending = \n " + buff);
 	}
+
+	public static void logCheckpoint() {
+		if (Main.checkpointsTaken.size() > 0) {
+			Checkpoint checkpoint = Main.checkpointsTaken.get(Main.checkpointsTaken.size() - 1);
+			StringBuffer buff = new StringBuffer();
+			buff.append("Checkpoint number: " + checkpoint.getSequenceNumber());
+			buff.append("VECTOR CLOCK : \n-------------------------\n");
+			for (Integer label : checkpoint.getVectors()[VectorType.VECTOR_CLOCK.ordinal()]) {
+				buff.append(label + "\t");
+			}
+			buff.append("\n");
+			Utils.log(buff.toString());
+		}
+	}
+
 }
