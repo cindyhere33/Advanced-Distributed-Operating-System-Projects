@@ -7,9 +7,12 @@ import kootoueg.Message.TypeOfMessage;
 public class RecoveryUtils {
 
 	public static synchronized void initiateRecoveryProtocol() {
+		System.out.println("-------------------------------------\n");
+		Utils.log("RECOVERY INITIATED");
 		Utils.logDebugStatements("Checkpoints taken so far .. " + Main.checkpointsTaken.size());
 		if (Main.checkpointsTaken.size() > 0) {
 			rollback();
+			Utils.logCheckpoint();
 			if (hasSentRecoveryRequest()) {
 				return;
 			}
@@ -18,6 +21,7 @@ public class RecoveryUtils {
 			Main.checkpointRecoverySequence.remove(0);
 		}
 		announceRecoveryProtocolTermination();
+		Utils.logCheckpoint();
 		Main.initiateCheckpointOrRecoveryIfMyTurn();
 	}
 

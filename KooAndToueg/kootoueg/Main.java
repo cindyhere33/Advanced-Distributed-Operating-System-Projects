@@ -97,7 +97,6 @@ public class Main {
 							Main.checkpointingInProgress = true;
 							CheckpointingUtils.initiateCheckpointProtocol();
 						} else {
-							Utils.log("Initiating recovery protocol");
 							RecoveryUtils.initiateRecoveryProtocol();
 						}
 					}
@@ -143,6 +142,7 @@ public class Main {
 			if (checkpointRecoverySequence.size() > 0 && message.getLabel() < checkpointRecoverySequence.size()) {
 				checkpointRecoverySequence.remove(0);
 				CheckpointingUtils.makeCheckpointPermanent();
+				Utils.logCheckpoint();
 				CheckpointingUtils.announceCheckpointProtocolTermination();
 				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
@@ -155,6 +155,7 @@ public class Main {
 			CheckpointingUtils.onConfirmationsReceived();
 			break;
 		case RECOVERY_INITIATION:
+			Utils.logVectors();
 			if (RecoveryUtils.needsToRollback(message.getOriginNode(), message.getLabel()) && !needsToRollback) {
 				myCheckpointOrRecoveryInitiator = message.getOriginNode();
 				needsToRollback = true;
@@ -180,6 +181,7 @@ public class Main {
 				}
 				RecoveryUtils.announceRecoveryProtocolTermination();
 				myCheckpointOrRecoveryInitiator = null;
+				Utils.logCheckpoint();
 				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;

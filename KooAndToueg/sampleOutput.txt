@@ -1,0 +1,14 @@
+//Sample output file format
+
+1 : Checkpoint initiated
+1 : Checkpoint number: 4
+VECTOR CLOCK
+------------------------------
+162	150	145	233	101	
+2 : Checkpoint number: 3
+VECTOR CLOCK
+------------------------------
+145 245 212 345 211
+//so on..
+3 : Checkpoint initiated    
+//....so on

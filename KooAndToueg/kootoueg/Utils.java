@@ -14,7 +14,7 @@ public class Utils {
 	/*
 	 * Prints msg to console
 	 */
-	public static void log(String msg) {
+	public static synchronized void log(String msg) {
 		System.out.println(Main.myNode.getId() + " : " + msg);
 	}
 
@@ -37,16 +37,16 @@ public class Utils {
 		}
 	}
 
-	public static long getExponentialDistributedValue(int value) {
+	public static synchronized long getExponentialDistributedValue(int value) {
 		// return (long) Math.floor((-value * Math.log(Math.random())));
 		return value;
 	}
 
-	public static void initVector(Main.VectorType type, int val) {
+	public static synchronized void initVector(Main.VectorType type, int val) {
 		Arrays.fill(Main.vectors[type.ordinal()], val);
 	}
 
-	public static void setupVectors() {
+	public static synchronized void setupVectors() {
 		Main.vectors = new Integer[4][Main.noNodes];
 		Utils.initVector(VectorType.VECTOR_CLOCK, 0);
 		Utils.initVector(VectorType.FIRST_LABEL_SENT, -1);
@@ -58,7 +58,7 @@ public class Utils {
 	 * In case of sending message, nodeid refers to the recipient node In case
 	 * of receiving message, nodeid refers to the source node
 	 */
-	public static void updateVectors(Main.EventType eventType, Message msg) {
+	public static synchronized void updateVectors(Main.EventType eventType, Message msg) {
 		switch (eventType) {
 
 		// First label sent updated if no messages were sent to the node after
@@ -86,12 +86,11 @@ public class Utils {
 			break;
 		case RECOVERY:
 			Utils.initVector(VectorType.LAST_LABEL_RECEIVED, -1);
-			Utils.initVector(VectorType.LAST_LABEL_SENT, -1);
 			break;
 		}
 	}
 
-	public static void logVectors2() {
+	public static synchronized void logVectors() {
 		StringBuffer line = new StringBuffer();
 		int i = 0;
 		for (Integer[] vector : Main.vectors) {
@@ -102,20 +101,20 @@ public class Utils {
 			line.append("\n");
 			i++;
 		}
-		Utils.log(line.toString() + "\n==================================================\n");
+		Utils.logDebugStatements(line.toString() + "\n==================================================\n");
 	}
 
-	public static void logVectorClock() {
+	public static synchronized void logVectorClock() {
 		StringBuffer line = new StringBuffer();
 		line.append("Vector Clock: \n------------------------------\n");
 		for (Integer vec : Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]) {
 			line.append(vec + "\t");
 		}
 		line.append("\n");
-		Utils.log(line.toString());
+		Utils.logDebugStatements(line.toString());
 	}
 
-	public static void logConfirmationsRecieved() {
+	public static synchronized void logConfirmationsRecieved() {
 		StringBuffer buff = new StringBuffer();
 		for (Integer id : Main.confirmationsPending.keySet()) {
 			buff.append(id + " - " + Main.confirmationsPending.get(id) + "\n");
@@ -123,7 +122,7 @@ public class Utils {
 		Utils.logDebugStatements("Confirmations pending = \n " + buff);
 	}
 
-	public static void logCheckpoint() {
+	public static synchronized void logCheckpoint() {
 		if (Main.checkpointsTaken.size() > 0) {
 			Checkpoint checkpoint = Main.checkpointsTaken.get(Main.checkpointsTaken.size() - 1);
 			StringBuffer buff = new StringBuffer();
@@ -137,11 +136,11 @@ public class Utils {
 		}
 	}
 
-	public static void logDebugStatements(String msg) {
-		Utils.log(msg);
+	public static synchronized void logDebugStatements(String msg) {
+//		Utils.log(msg);
 	}
 
-	public static boolean areAllConfirmationsReceived() {
+	public static synchronized boolean areAllConfirmationsReceived() {
 		boolean allConfirmationsReceived = true;
 		for (Integer id : Main.confirmationsPending.keySet()) {
 			if (!Main.confirmationsPending.get(id))

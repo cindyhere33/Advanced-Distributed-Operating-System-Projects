@@ -1,0 +1,291 @@
+0 : Server started
+4 : Server started
+2 : Server started
+3 : Server started
+1 : Server started
+-------------------------------------
+
+1 : CHECKPOINTING INITIATED
+1 : Checkpoint number: 1
+VECTOR CLOCK : 
+205	191	180	295	130	
+
+
+0 : Checkpoint number: 1
+VECTOR CLOCK : 
+206	187	180	295	130	
+
+
+3 : Checkpoint number: 1
+VECTOR CLOCK : 
+203	189	179	301	133	
+
+
+4 : Checkpoint number: 1
+VECTOR CLOCK : 
+198	186	176	297	134	
+
+
+2 : Checkpoint number: 1
+VECTOR CLOCK : 
+203	189	183	300	133	
+
+
+-------------------------------------
+
+2 : CHECKPOINTING INITIATED
+2 : Checkpoint number: 2
+VECTOR CLOCK : 
+222	203	202	329	147	
+
+
+0 : Checkpoint number: 2
+VECTOR CLOCK : 
+223	203	199	329	147	
+
+
+1 : Checkpoint number: 2
+VECTOR CLOCK : 
+219	206	196	332	148	
+
+
+3 : Checkpoint number: 2
+VECTOR CLOCK : 
+222	204	201	335	148	
+
+
+4 : Checkpoint number: 2
+VECTOR CLOCK : 
+213	200	188	321	150	
+
+
+-------------------------------------
+
+0 : CHECKPOINTING INITIATED
+0 : Checkpoint number: 3
+VECTOR CLOCK : 
+245	228	218	365	161	
+
+
+1 : Checkpoint number: 3
+VECTOR CLOCK : 
+243	230	218	365	161	
+
+
+3 : Checkpoint number: 3
+VECTOR CLOCK : 
+236	225	212	368	162	
+
+
+2 : Checkpoint number: 3
+VECTOR CLOCK : 
+240	225	219	365	161	
+
+
+4 : Checkpoint number: 3
+VECTOR CLOCK : 
+236	224	212	360	163	
+
+
+-------------------------------------
+
+2 : CHECKPOINTING INITIATED
+2 : Checkpoint number: 4
+VECTOR CLOCK : 
+262	250	234	395	173	
+
+
+0 : Checkpoint number: 4
+VECTOR CLOCK : 
+263	250	232	395	173	
+
+
+1 : Checkpoint number: 4
+VECTOR CLOCK : 
+257	252	226	388	170	
+
+
+3 : Checkpoint number: 4
+VECTOR CLOCK : 
+256	247	229	399	175	
+
+
+4 : Checkpoint number: 4
+VECTOR CLOCK : 
+256	247	229	397	177	
+
+
+-------------------------------------
+
+4 : RECOVERY INITIATED
+4 : Rolled back
+4 : Checkpoint number: 4
+VECTOR CLOCK : 
+256	247	229	397	177	
+
+
+3 : Rolled back
+1 : Checkpoint number: 4
+VECTOR CLOCK : 
+257	252	226	388	170	
+
+
+2 : Checkpoint number: 4
+VECTOR CLOCK : 
+262	250	234	395	173	
+
+
+3 : Checkpoint number: 4
+VECTOR CLOCK : 
+256	247	229	399	175	
+
+
+0 : Checkpoint number: 4
+VECTOR CLOCK : 
+263	250	232	395	173	
+
+
+-------------------------------------
+
+1 : CHECKPOINTING INITIATED
+1 : Checkpoint number: 5
+VECTOR CLOCK : 
+304	292	270	463	205	
+
+
+3 : Checkpoint number: 5
+VECTOR CLOCK : 
+304	290	270	464	205	
+
+
+2 : Checkpoint number: 5
+VECTOR CLOCK : 
+306	288	273	454	201	
+
+
+0 : Checkpoint number: 5
+VECTOR CLOCK : 
+308	288	272	454	201	
+
+
+4 : Checkpoint number: 5
+VECTOR CLOCK : 
+300	284	268	457	207	
+
+
+-------------------------------------
+
+0 : CHECKPOINTING INITIATED
+3 : Checkpoint number: 6
+VECTOR CLOCK : 
+323	313	285	497	219	
+
+
+0 : Checkpoint number: 6
+VECTOR CLOCK : 
+327	311	287	488	216	
+
+
+2 : Checkpoint number: 6
+VECTOR CLOCK : 
+320	307	288	480	211	
+
+
+1 : Checkpoint number: 6
+VECTOR CLOCK : 
+323	314	283	488	216	
+
+
+4 : Checkpoint number: 6
+VECTOR CLOCK : 
+320	308	284	492	221	
+
+
+-------------------------------------
+
+3 : CHECKPOINTING INITIATED
+3 : Checkpoint number: 7
+VECTOR CLOCK : 
+342	332	303	527	231	
+
+
+2 : Checkpoint number: 7
+VECTOR CLOCK : 
+347	332	310	525	230	
+
+
+4 : Checkpoint number: 7
+VECTOR CLOCK : 
+327	313	291	503	232	
+
+
+0 : Checkpoint number: 7
+VECTOR CLOCK : 
+349	332	309	525	230	
+
+
+1 : Checkpoint number: 7
+VECTOR CLOCK : 
+342	333	303	522	229	
+
+
+-------------------------------------
+
+3 : RECOVERY INITIATED
+3 : Rolled back
+3 : Checkpoint number: 7
+VECTOR CLOCK : 
+342	332	303	527	231	
+
+
+1 : Rolled back
+2 : Rolled back
+1 : Checkpoint number: 7
+VECTOR CLOCK : 
+342	333	303	522	229	
+
+
+0 : Checkpoint number: 7
+VECTOR CLOCK : 
+349	332	309	525	230	
+
+
+4 : Rolled back
+4 : Checkpoint number: 7
+VECTOR CLOCK : 
+327	313	291	503	232	
+
+
+2 : Checkpoint number: 7
+VECTOR CLOCK : 
+347	332	310	525	230	
+
+
+-------------------------------------
+
+2 : CHECKPOINTING INITIATED
+2 : Checkpoint number: 8
+VECTOR CLOCK : 
+396	356	252	569	255	
+
+
+0 : Checkpoint number: 8
+VECTOR CLOCK : 
+402	362	351	571	256	
+
+
+1 : Checkpoint number: 8
+VECTOR CLOCK : 
+399	363	350	571	256	
+
+
+3 : Checkpoint number: 8
+VECTOR CLOCK : 
+394	359	347	578	260	
+
+
+4 : Checkpoint number: 8
+VECTOR CLOCK : 
+394	359	347	576	262	
+
+

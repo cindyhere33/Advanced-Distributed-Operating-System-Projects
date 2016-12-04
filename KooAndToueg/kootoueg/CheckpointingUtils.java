@@ -6,10 +6,9 @@ import kootoueg.Message.TypeOfMessage;
 
 public class CheckpointingUtils {
 
-	public static void makeCheckpointPermanent() {
+	public static synchronized void makeCheckpointPermanent() {
 		if (Main.temporaryCheckpoint != null) {
 			Main.checkpointsTaken.add(Main.temporaryCheckpoint);
-			Utils.logCheckpoint();
 		}
 	}
 
@@ -17,7 +16,7 @@ public class CheckpointingUtils {
 	 * Set checkpointintInProgress to true. Send messages to all neighbours to
 	 * start checkpointing
 	 */
-	public static boolean hasSentCheckpointingRequests() {
+	public static synchronized boolean hasSentCheckpointingRequests() {
 		boolean sentRequests = false;
 		for (Integer id : Main.myNode.neighbours) {
 			if (id.equals(Main.myCheckpointOrRecoveryInitiator))
@@ -38,19 +37,19 @@ public class CheckpointingUtils {
 		return sentRequests;
 	}
 
-	public static void takeTentativeCheckpoint() {
+	public static synchronized void takeTentativeCheckpoint() {
 		if (Main.temporaryCheckpoint == null)
 			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointsTaken.size(), Main.vectors);
 		Utils.logDebugStatements("Temporary checkpoint taken");
 		Utils.updateVectors(EventType.CHECKPOINT, null);
 	}
 
-	public static boolean needsToTakeCheckpoint(Integer sender, Integer lastLabelReceived) {
+	public static synchronized boolean needsToTakeCheckpoint(Integer sender, Integer lastLabelReceived) {
 		return Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][sender] > -1
 				&& Main.vectors[VectorType.FIRST_LABEL_SENT.ordinal()][sender] < lastLabelReceived.intValue();
 	}
 
-	public static void announceCheckpointProtocolTermination() {
+	public static synchronized void announceCheckpointProtocolTermination() {
 		Utils.logDebugStatements("Announcing termination\t Initiator = " + Main.myCheckpointOrRecoveryInitiator);
 		for (Integer id : Main.myNode.getNeighbours()) {
 			if (id.equals(Main.myCheckpointOrRecoveryInitiator))
@@ -66,7 +65,7 @@ public class CheckpointingUtils {
 
 	}
 
-	public static void initiateCheckpointProtocol() {
+	public static synchronized void initiateCheckpointProtocol() {
 		System.out.println("-------------------------------------\n");
 		Utils.log("CHECKPOINTING INITIATED");
 		if (hasSentCheckpointingRequests()) {
@@ -77,6 +76,7 @@ public class CheckpointingUtils {
 				Main.checkpointRecoverySequence.remove(0);
 			}
 			announceCheckpointProtocolTermination();
+			Utils.logCheckpoint();
 			Main.initiateCheckpointOrRecoveryIfMyTurn();
 		}
 	}
@@ -95,6 +95,7 @@ public class CheckpointingUtils {
 					Main.checkpointRecoverySequence.remove(0);
 				}
 				CheckpointingUtils.makeCheckpointPermanent();
+				Utils.logCheckpoint();
 				CheckpointingUtils.announceCheckpointProtocolTermination();
 				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			} else {
