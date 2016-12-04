@@ -15,11 +15,6 @@ public class Utils {
 	 * Prints msg to console
 	 */
 	public static void log(String msg) {
-		if (Main.isFinalRun) {
-			if (!(msg.contains("Enter") || msg.contains("Exit"))) {
-				return;
-			}
-		}
 		System.out.println(Main.myNode.getId() + " : " + msg);
 	}
 
@@ -125,7 +120,7 @@ public class Utils {
 		for (Integer id : Main.confirmationsPending.keySet()) {
 			buff.append(id + " - " + Main.confirmationsPending.get(id) + "\n");
 		}
-		Utils.log("Confirmations pending = \n " + buff);
+		Utils.logDebugStatements("Confirmations pending = \n " + buff);
 	}
 
 	public static void logCheckpoint() {
@@ -133,13 +128,26 @@ public class Utils {
 			Checkpoint checkpoint = Main.checkpointsTaken.get(Main.checkpointsTaken.size() - 1);
 			StringBuffer buff = new StringBuffer();
 			buff.append("Checkpoint number: " + checkpoint.getSequenceNumber());
-			buff.append("VECTOR CLOCK : \n-------------------------\n");
+			buff.append("\nVECTOR CLOCK : \n");
 			for (Integer label : checkpoint.getVectors()[VectorType.VECTOR_CLOCK.ordinal()]) {
 				buff.append(label + "\t");
 			}
 			buff.append("\n");
-			Utils.log(buff.toString());
+			Utils.log(buff.toString() + "\n");
 		}
+	}
+
+	public static void logDebugStatements(String msg) {
+		Utils.log(msg);
+	}
+
+	public static boolean areAllConfirmationsReceived() {
+		boolean allConfirmationsReceived = true;
+		for (Integer id : Main.confirmationsPending.keySet()) {
+			if (!Main.confirmationsPending.get(id))
+				allConfirmationsReceived = false;
+		}
+		return allConfirmationsReceived;
 	}
 
 }

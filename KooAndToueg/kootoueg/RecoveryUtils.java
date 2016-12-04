@@ -6,23 +6,22 @@ import kootoueg.Message.TypeOfMessage;
 
 public class RecoveryUtils {
 
-	public static void initiateRecoveryProtocol() {
-		Utils.log("Checkpoints taken so far .. " + Main.checkpointsTaken.size());
-		//Utils.logVectors();
-		if (Main.checkpointsTaken.size() > 1) {
-			Main.myCheckpointOrRecoveryInitiator = Main.myNode.getId();
+	public static synchronized void initiateRecoveryProtocol() {
+		Utils.logDebugStatements("Checkpoints taken so far .. " + Main.checkpointsTaken.size());
+		if (Main.checkpointsTaken.size() > 0) {
 			rollback();
-			sendRecoveryRequest();
-		} else {
-			if (Main.checkpointRecoverySequence.size() > 0) {
-				Main.checkpointRecoverySequence.remove(0);
+			if (hasSentRecoveryRequest()) {
+				return;
 			}
-			announceRecoveryProtocolTermination();
-			Main.initiateCheckpointOrRecoveryIfMyTurn();
 		}
+		if (Main.checkpointRecoverySequence.size() > 0) {
+			Main.checkpointRecoverySequence.remove(0);
+		}
+		announceRecoveryProtocolTermination();
+		Main.initiateCheckpointOrRecoveryIfMyTurn();
 	}
 
-	public static void announceRecoveryProtocolTermination() {
+	public static synchronized void announceRecoveryProtocolTermination() {
 		for (Integer id : Main.myNode.neighbours) {
 			Message msg = new Message(Main.myNode.getId(), id, Main.checkpointRecoverySequence.size(),
 					TypeOfMessage.RECOVERY_CONCLUDED, Main.myNode.getId(), null);
@@ -30,24 +29,53 @@ public class RecoveryUtils {
 		}
 	}
 
-	public static void sendRecoveryRequest() {
+	public static synchronized boolean hasSentRecoveryRequest() {
+		boolean sentRequests = false;
 		for (Integer id : Main.myNode.neighbours) {
+			if (id.equals(Main.myCheckpointOrRecoveryInitiator))
+				continue;
+			Utils.logDebugStatements("Checking whether to send recovery request to " + id + "\t Initiator = "
+					+ Main.myCheckpointOrRecoveryInitiator);
 			Message msg = new Message(Main.myNode.getId(), id, Main.vectors[VectorType.LAST_LABEL_SENT.ordinal()][id],
-					TypeOfMessage.RECOVERY_INITIATION, Main.myNode.getId(), null);
+					TypeOfMessage.RECOVERY_INITIATION, Main.myNode.getId(),
+					Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 			Client.sendMessage(msg);
 			Main.confirmationsPending.put(id, false);
+			Utils.logDebugStatements(
+					"Recovery request sent to  " + id + "\t Initiator = " + Main.myCheckpointOrRecoveryInitiator);
+			sentRequests = true;
 		}
+		return sentRequests;
 	}
 
-	public static void rollback() {
+	public static synchronized void rollback() {
 		Utils.updateVectors(EventType.RECOVERY, null);
-		if (Main.checkpointsTaken.size() > 1) {
-			Main.vectors = Main.checkpointsTaken.get(Main.checkpointsTaken.size() - 1).getVectors();
+		if (Main.checkpointsTaken.size() > 0) {
+			Checkpoint lastStableCheckpoint = Main.checkpointsTaken.get(Main.checkpointsTaken.size() - 1);
+			for (int i = 0; i < 4; i++) {
+				System.arraycopy(lastStableCheckpoint.vectors[i], 0, Main.vectors[i], 0, Main.noNodes);
+			}
 			Utils.log("Rolled back");
 		}
 	}
 
-	public static boolean needsToRollback(Integer sender, Integer lastLabelSent) {
+	public static synchronized boolean needsToRollback(Integer sender, Integer lastLabelSent) {
 		return Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][sender] > lastLabelSent;
+	}
+
+	public static synchronized void onConfirmationsReceived() {
+		if (Utils.areAllConfirmationsReceived()) {
+			if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
+				if (Main.checkpointRecoverySequence.size() > 0) {
+					Main.checkpointRecoverySequence.remove(0);
+				}
+				announceRecoveryProtocolTermination();
+				Main.initiateCheckpointOrRecoveryIfMyTurn();
+			} else {
+				Message msg = new Message(Main.myNode.getId(), Main.myCheckpointOrRecoveryInitiator, 0,
+						TypeOfMessage.RECOVERY_OK, 0, Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
+				Client.sendMessage(msg);
+			}
+		}
 	}
 }

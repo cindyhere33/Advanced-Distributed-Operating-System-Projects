@@ -22,12 +22,16 @@ public class CheckpointingUtils {
 		for (Integer id : Main.myNode.neighbours) {
 			if (id.equals(Main.myCheckpointOrRecoveryInitiator))
 				continue;
+			Utils.logDebugStatements("Checking whether to send checkpointing request to " + id + "\t Initiator = "
+					+ Main.myCheckpointOrRecoveryInitiator);
 			if (Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id].intValue() > -1) {
 				Message msg = new Message(Main.myNode.getId(), id,
 						Main.vectors[VectorType.LAST_LABEL_RECEIVED.ordinal()][id], TypeOfMessage.CHECKPOINT_INITIATION,
 						Main.myNode.getId(), Main.vectors[VectorType.VECTOR_CLOCK.ordinal()]);
 				Client.sendMessage(msg);
 				Main.confirmationsPending.put(id, false);
+				Utils.logDebugStatements("Checkpointing request sent to  " + id + "\t Initiator = "
+						+ Main.myCheckpointOrRecoveryInitiator);
 				sentRequests = true;
 			}
 		}
@@ -37,6 +41,7 @@ public class CheckpointingUtils {
 	public static void takeTentativeCheckpoint() {
 		if (Main.temporaryCheckpoint == null)
 			Main.temporaryCheckpoint = new Checkpoint(Main.checkpointsTaken.size(), Main.vectors);
+		Utils.logDebugStatements("Temporary checkpoint taken");
 		Utils.updateVectors(EventType.CHECKPOINT, null);
 	}
 
@@ -46,7 +51,10 @@ public class CheckpointingUtils {
 	}
 
 	public static void announceCheckpointProtocolTermination() {
+		Utils.logDebugStatements("Announcing termination\t Initiator = " + Main.myCheckpointOrRecoveryInitiator);
 		for (Integer id : Main.myNode.getNeighbours()) {
+			if (id.equals(Main.myCheckpointOrRecoveryInitiator))
+				continue;
 			Message msg = new Message(Main.myNode.getId(), id, Main.checkpointRecoverySequence.size(),
 					TypeOfMessage.CHECKPOINT_FINAL, Main.myNode.getId(), null);
 			Client.sendMessage(msg);
@@ -55,9 +63,12 @@ public class CheckpointingUtils {
 		Main.myCheckpointOrRecoveryInitiator = null;
 		Main.temporaryCheckpoint = null;
 		Main.confirmationsPending.clear();
+
 	}
 
 	public static void initiateCheckpointProtocol() {
+		System.out.println("-------------------------------------\n");
+		Utils.log("CHECKPOINTING INITIATED");
 		if (hasSentCheckpointingRequests()) {
 			Main.checkpointingInProgress = true;
 			takeTentativeCheckpoint();
@@ -70,14 +81,15 @@ public class CheckpointingUtils {
 		}
 	}
 
-	public static void onAllConfirmationsReceived() {
-		boolean allConfirmationsReceived = true;
-		for (Integer id : Main.confirmationsPending.keySet()) {
-			if (!Main.confirmationsPending.get(id))
-				allConfirmationsReceived = false;
-		}
-
-		if (allConfirmationsReceived) {
+	public static void onConfirmationsReceived() {
+		if (Utils.areAllConfirmationsReceived()) {
+			if (Main.myCheckpointOrRecoveryInitiator == null)
+				Utils.logDebugStatements("Checkpoint initiator is null");
+			else if (Main.myNode == null)
+				Utils.logDebugStatements("myNode is null");
+			else if (Main.myNode.getId() == null) {
+				Utils.logDebugStatements("My Node id is null");
+			}
 			if (Main.myCheckpointOrRecoveryInitiator.equals(Main.myNode.getId())) {
 				if (Main.checkpointRecoverySequence.size() > 0) {
 					Main.checkpointRecoverySequence.remove(0);

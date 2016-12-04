@@ -63,6 +63,8 @@ public class Main {
 
 	public static Integer myCheckpointOrRecoveryInitiator = null;
 
+	public static Boolean needsToRollback = false;
+
 	public static void main(String[] args) throws IOException {
 		try {
 			ConfigParser parser = new ConfigParser(args[0]);
@@ -80,12 +82,14 @@ public class Main {
 		}
 	}
 
-	public static void initiateCheckpointOrRecoveryIfMyTurn() {
+	public static synchronized void initiateCheckpointOrRecoveryIfMyTurn() {
 		if (checkpointRecoverySequence.size() > 0 && checkpointRecoverySequence.get(0).nodeId.equals(myNode.getId())) {
 			Timer timer = new Timer();
 			timer.schedule(new java.util.TimerTask() {
 				@Override
 				public void run() {
+					if (checkpointingInProgress)
+						return;
 					if (checkpointRecoverySequence.size() > 0
 							&& checkpointRecoverySequence.get(0).nodeId.equals(myNode.getId())) {
 						Main.myCheckpointOrRecoveryInitiator = Main.myNode.getId();
@@ -105,12 +109,14 @@ public class Main {
 
 	// Check if initiator or not
 	public synchronized static void handleMessage(Message message) {
+		if (message.getMessageType() != TypeOfMessage.APPLICATION)
+			Utils.logDebugStatements("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
+					+ " with label " + message.getLabel());
 		switch (message.getMessageType()) {
 		case APPLICATION:
 			Utils.updateVectors(EventType.RECEIVE_MSG, message);
 			break;
 		case CHECKPOINT_INITIATION:
-
 			if (checkpointingInProgress
 					|| !CheckpointingUtils.needsToTakeCheckpoint(message.getOriginNode(), message.getLabel())) {
 				Message msg = new Message(myNode.getId(), message.getOriginNode(), 0,
@@ -128,20 +134,22 @@ public class Main {
 			}
 			break;
 		case RECOVERY_INITIATION:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
-			if (RecoveryUtils.needsToRollback(message.getOriginNode(), message.getLabel())) {
+			if (RecoveryUtils.needsToRollback(message.getOriginNode(), message.getLabel()) && !needsToRollback) {
 				myCheckpointOrRecoveryInitiator = message.getOriginNode();
-				RecoveryUtils.sendRecoveryRequest();
-			} else {
-				Message msg = new Message(myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.RECOVERY_NOT_NEEDED,
-						message.getOriginNode(), null);
-				Client.sendMessage(msg);
+				needsToRollback = true;
+				if (RecoveryUtils.hasSentRecoveryRequest()) {
+					break;
+				}
 			}
+			Message msg = new Message(myNode.getId(), message.getOriginNode(), 0, TypeOfMessage.RECOVERY_OK,
+					message.getOriginNode(), null);
+			Client.sendMessage(msg);
+
 			break;
 		case CHECKPOINT_OK:
+			Utils.logConfirmationsRecieved();
 			confirmationsPending.put(message.getOriginNode(), true);
-			CheckpointingUtils.onAllConfirmationsReceived();
+			CheckpointingUtils.onConfirmationsReceived();
 			break;
 		case CHECKPOINT_FINAL:
 			if (checkpointRecoverySequence.size() > 0 && message.getLabel() < checkpointRecoverySequence.size()) {
@@ -152,36 +160,26 @@ public class Main {
 			}
 			break;
 		case CHECKPOINT_NOT_NEEDED:
+			Utils.logConfirmationsRecieved();
 			if (confirmationsPending.containsKey(message.getOriginNode())) {
 				confirmationsPending.remove(message.getOriginNode());
 			}
-			CheckpointingUtils.onAllConfirmationsReceived();
+			CheckpointingUtils.onConfirmationsReceived();
 			break;
 		case RECOVERY_CONCLUDED:
 			if (checkpointRecoverySequence.size() > 0 && message.getLabel() < checkpointRecoverySequence.size()) {
 				checkpointRecoverySequence.remove(0);
-				myCheckpointOrRecoveryInitiator = null;
+				if (needsToRollback) {
+					RecoveryUtils.rollback();
+					needsToRollback = false;
+				}
 				RecoveryUtils.announceRecoveryProtocolTermination();
+				myCheckpointOrRecoveryInitiator = null;
 				Main.initiateCheckpointOrRecoveryIfMyTurn();
 			}
 			break;
-		case RECOVERY_NOT_NEEDED:
-			Utils.log("Received " + message.getMessageType().name() + " from " + message.getOriginNode()
-					+ " with label " + message.getLabel());
-			if (confirmationsPending.containsKey(message.getOriginNode())) {
-				confirmationsPending.remove(message.getOriginNode());
-			}
-			if (confirmationsPending.size() == 0) {
-				if (myCheckpointOrRecoveryInitiator.equals(myNode.getId())) {
-					myCheckpointOrRecoveryInitiator = null;
-					RecoveryUtils.announceRecoveryProtocolTermination();
-					Main.initiateCheckpointOrRecoveryIfMyTurn();
-				} else {
-					Message msg = new Message(myNode.getId(), myCheckpointOrRecoveryInitiator, 0,
-							TypeOfMessage.RECOVERY_NOT_NEEDED, myCheckpointOrRecoveryInitiator, null);
-					Client.sendMessage(msg);
-				}
-			}
+		case RECOVERY_OK:
+			RecoveryUtils.onConfirmationsReceived();
 			break;
 		default:
 			break;
